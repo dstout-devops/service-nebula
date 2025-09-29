@@ -1,0 +1,21 @@
+{
+	"name": "ServiceNebula",
+    "build": {
+        "dockerfile": "build/Dockerfile"
+    },
+
+	"features": {
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": "true",
+			"installOhMyZsh": "true",
+			"installOhMyZshConfig": "true",
+			"configureZshAsDefaultShell": "true"
+		},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"moby": "false",
+			"dockerDefaultAddressPool": "base=10.0.0.0/16,size=24"
+		}
+	},
+	"postStartCommand": "chmod +x .devcontainer/build/postCreateCommand.sh && .devcontainer/build/postCreateCommand.sh"
+	// "customizations": {}
+}

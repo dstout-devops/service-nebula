@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metrics-server
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: metrics-server
+        image: k8s.gcr.io/metrics-server/metrics-server:latest
+        args:
+          - --kubelet-preferred-address-types=InternalIP,Hostname
+          - --kubelet-certificate-authority=/etc/ca/ca.crt
+          - --kubelet-insecure-tls=false
+        volumeMounts:
+          - mountPath: /etc/kubelet-ca
+            name: ca
+            readOnly: true
+      volumes:
+        - name: ca
+          configMap:
+            name: kubelet-ca

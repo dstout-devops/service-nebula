@@ -1,0 +1,25 @@
+# vault-issuer.yaml 
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: vault-issuer
+  namespace: service-nebula
+spec:
+  vault:
+    path: pki_int/sign/service-nebula
+    server: https://vault.vault:8200
+    caBundleSecretRef:
+      key: server_ca.crt
+      name: vault-client-tls  
+    clientCertSecretRef:
+      name: vault-client-tls
+      key: client.crt
+    clientKeySecretRef:
+      name: vault-client-tls
+      key: client.key
+    auth:
+      kubernetes:
+        role: vault-issuer
+        mountPath: /v1/auth/kubernetes
+        serviceAccountRef:
+          name: vault-issuer

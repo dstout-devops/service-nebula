@@ -1,0 +1,35 @@
+---
+global:
+   tlsDisable: false
+injector:
+  enabled: false
+server:
+  dataStorage:
+    enabled: false
+  standalone:
+    enabled: true
+    config: |
+      listener "tcp" {
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+        tls_disable = false
+        tls_client_ca_file = "/vault/tls/client_ca.crt"
+        tls_cert_file = "/vault/tls/server.crt"
+        tls_key_file = "/vault/tls/server.key"
+        tls_require_and_verify_client_cert = true
+      }
+  extraArgs: "-dev-tls -dev-listen-address=[::]:8202"
+  extraEnvironmentVars:
+    VAULT_TLSCERT: /vault/tls/server.crt
+    VAULT_TLSKEY: /vault/tls/server.key
+    VAULT_CLIENT_CERT: /vault/tls/client.crt
+    VAULT_CLIENT_KEY: /vault/tls/client.key
+  volumes:
+    - name: vault-tls
+      secret:
+        defaultMode: 420
+        secretName: vault-tls
+  volumeMounts:
+    - mountPath: /vault/tls
+      name: vault-tls
+      readOnly: true

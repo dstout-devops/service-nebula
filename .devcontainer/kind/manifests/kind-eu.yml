@@ -1,0 +1,50 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: service-nebula-eu
+nodes:
+  - role: control-plane
+    extraMounts:
+      - hostPath: ./certs/kubelet-eu.crt
+        containerPath: /etc/kubernetes/pki/kubelet.crt
+      - hostPath: ./certs/kubelet-eu.key
+        containerPath: /etc/kubernetes/pki/kubelet.key
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            tls-cert-file: /etc/kubernetes/pki/kubelet.crt
+            tls-private-key-file: /etc/kubernetes/pki/kubelet.key
+            rotate-server-certificates: "false"
+  - role: worker
+    extraMounts:
+      - hostPath: ./certs/kubelet-eu.crt
+        containerPath: /etc/kubernetes/pki/kubelet.crt
+      - hostPath: ./certs/kubelet-eu.key
+        containerPath: /etc/kubernetes/pki/kubelet.key
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            tls-cert-file: /etc/kubernetes/pki/kubelet.crt
+            tls-private-key-file: /etc/kubernetes/pki/kubelet.key
+            rotate-server-certificates: "false"
+  - role: worker
+    extraMounts:
+      - hostPath: ./certs/kubelet-eu.crt
+        containerPath: /etc/kubernetes/pki/kubelet.crt
+      - hostPath: ./certs/kubelet-eu.key
+        containerPath: /etc/kubernetes/pki/kubelet.key
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            tls-cert-file: /etc/kubernetes/pki/kubelet.crt
+            tls-private-key-file: /etc/kubernetes/pki/kubelet.key
+            rotate-server-certificates: "false"
+networking:
+  disableDefaultCNI: true
+  podSubnet: "10.20.0.0/16"
+  serviceSubnet: "10.21.0.0/16"

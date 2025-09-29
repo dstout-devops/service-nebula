@@ -1,0 +1,9 @@
+#!/bin/bash
+set -e
+
+go install sigs.k8s.io/kind@latest
+go install github.com/derailed/k9s@latest
+go install sigs.k8s.io/cloud-provider-kind@latest
+
+# deploy services
+./.devcontainer/kind/build-lab.sh
