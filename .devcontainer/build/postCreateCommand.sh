@@ -6,4 +6,4 @@ go install github.com/derailed/k9s@latest
 go install sigs.k8s.io/cloud-provider-kind@latest
 
 # deploy services
-./.devcontainer/kind/build-lab.sh
+cd .devcontainer/kind && bash collapse-gravity.sh

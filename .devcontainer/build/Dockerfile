@@ -34,5 +34,5 @@ RUN apt-get update && \
     apt-get install -y \
         helm \
         kubectl \
-        step && \
+        step-ca step-cli && \
     rm -rf /var/lib/apt/lists/*
