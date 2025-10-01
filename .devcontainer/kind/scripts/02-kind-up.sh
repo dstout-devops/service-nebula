@@ -173,7 +173,6 @@ install_metrics_server_on_cluster() {
 main() {
   declare -A CLUSTERS=(
     [1]=na
-    [2]=eu
   )
 
   # Tooling
@@ -195,10 +194,10 @@ main() {
   done
 
   # ClusterMesh connection
-  cilium clustermesh connect \
-    --context "kind-${CLUSTERS[1]}" \
-    --destination-context "kind-${CLUSTERS[2]}"
-  cilium clustermesh status --context "kind-${CLUSTERS[1]}" --wait
+  # cilium clustermesh connect \
+  #   --context "kind-${CLUSTERS[1]}" \
+  #   --destination-context "kind-${CLUSTERS[2]}"
+  # cilium clustermesh status --context "kind-${CLUSTERS[1]}" --wait
 
   # Metrics Server setup
   for index in $(printf "%s\n" "${!CLUSTERS[@]}" | sort -n); do

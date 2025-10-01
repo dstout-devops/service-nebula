@@ -8,6 +8,8 @@ nodes:
         containerPath: /etc/kubernetes/pki/kubelet.crt
       - hostPath: ./certs/kubelet-na.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+      - hostPath: /etc/ssl/certs/ca-certificates.crt
+        containerPath: /etc/ssl/certs/ca-certificates.crt
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -22,6 +24,8 @@ nodes:
         containerPath: /etc/kubernetes/pki/kubelet.crt
       - hostPath: ./certs/kubelet-na.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+      - hostPath: /etc/ssl/certs/ca-certificates.crt
+        containerPath: /etc/ssl/certs/ca-certificates.crt
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -36,6 +40,8 @@ nodes:
         containerPath: /etc/kubernetes/pki/kubelet.crt
       - hostPath: ./certs/kubelet-na.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+      - hostPath: /etc/ssl/certs/ca-certificates.crt
+        containerPath: /etc/ssl/certs/ca-certificates.crt
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration

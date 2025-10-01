@@ -1,6 +1,7 @@
 {
-	"name": "ServiceNebula",
+	"name": "service-nebula",
     "build": {
+		"context": "build",
         "dockerfile": "build/Dockerfile"
     },
 
@@ -15,6 +16,9 @@
 			"moby": "false",
 			"dockerDefaultAddressPool": "base=10.0.0.0/16,size=24"
 		}
+	},
+	"containerEnv": {
+		"NODE_EXTRA_CA_CERTS": "/etc/ssl/certs/ca-certificates.crt"
 	},
 	"postStartCommand": "chmod +x .devcontainer/build/postCreateCommand.sh && .devcontainer/build/postCreateCommand.sh"
 	// "customizations": {}

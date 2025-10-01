@@ -1,14 +1,22 @@
 ARG VARIANT=trixie
 
+FROM scratch AS certs
+COPY certificates/* .
+
 FROM mcr.microsoft.com/vscode/devcontainers/base:${VARIANT} AS apt
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && \ 
-    apt-get install -y \
+RUN apt-get update \
+    && apt-get install -y \
         ca-certificates \
         curl \
-        gnupg && \
-    rm -rf /var/lib/apt/lists/*
+        gnupg \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -Rf /usr/share/doc && rm -Rf /usr/share/man
+
+COPY --from=certs * /usr/local/share/ca-certificates/mc/
+RUN update-ca-certificates
+
 RUN mkdir -p -m 755 /etc/apt/keyrings && \
     # kubernetes
     curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg && \
@@ -28,16 +36,28 @@ RUN mkdir -p -m 755 /etc/apt/keyrings && \
     echo 'deb [signed-by=/etc/apt/keyrings/smallstep-apt-keyring.gpg] https://packages.smallstep.com/stable/debian debs main' | tee /etc/apt/sources.list.d/smallstep.list
 
 FROM mcr.microsoft.com/devcontainers/go:${VARIANT} AS devcontainer
-
 ENV DEBIAN_FRONTEND=noninteractive
+
+COPY --from=certs * /usr/local/share/ca-certificates/mc/
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -Rf /usr/share/doc && rm -Rf /usr/share/man \
+    && update-ca-certificates
 
 COPY --from=apt /etc/apt/keyrings /etc/apt/keyrings
 COPY --from=apt /etc/apt/sources.list.d /etc/apt/sources.list.d
-
-RUN apt-get update && \ 
-    apt-get install -y \
+RUN apt-get update \
+    && apt-get install -y \
         helm \
-        kubectl \
+        kubectl kubectx \
         step-ca step-cli \
-        consul consul-k8s && \
-    rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -Rf /usr/share/doc && rm -Rf /usr/share/man
+
+COPY --from=hashicorp/vault:latest /bin/vault /bin/
+COPY --from=ghcr.io/opentofu/opentofu:minimal /usr/local/bin/tofu /usr/local/bin/
+
+ADD https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb /tmp/k9s.deb
+RUN apt-get install -y /tmp/k9s.deb && rm /tmp/k9s.deb

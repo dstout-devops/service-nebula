@@ -1,4 +1,2 @@
-*.crt
-*.pem
 *.key
 *.tar.gz
