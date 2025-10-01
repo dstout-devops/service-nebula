@@ -133,13 +133,6 @@ install_cilium_on_cluster() {
 
   log "Installing Cilium on ${context}"
 
-  if [[ "$index" -ne 1 ]]; then
-    local source_context
-    source_context=$(get_context_by_index CLUSTERS 1)
-    log "Copying cilium-ca from ${source_context} to ${context}"
-    kubectl --context "${source_context}" get secret -n kube-system cilium-ca -o yaml | kubectl --context "${context}" create -f -
-  fi
-
   helm install cilium cilium/cilium \
     --namespace kube-system \
     --set image.pullPolicy=IfNotPresent \
@@ -172,7 +165,7 @@ install_metrics_server_on_cluster() {
 #-------------------------------
 main() {
   declare -A CLUSTERS=(
-    [1]=na
+    [1]=mgmt
   )
 
   # Tooling

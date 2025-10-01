@@ -1,13 +1,15 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-name: service-nebula-eu
+name: service-nebula-mgmt
 nodes:
   - role: control-plane
     extraMounts:
-      - hostPath: ./certs/kubelet-eu.crt
+      - hostPath: ./certs/kubelet-mgmt.crt
         containerPath: /etc/kubernetes/pki/kubelet.crt
-      - hostPath: ./certs/kubelet-eu.key
+      - hostPath: ./certs/kubelet-mgmt.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+      - hostPath: /etc/ssl/certs/ca-certificates.crt
+        containerPath: /etc/ssl/certs/ca-certificates.crt
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -18,10 +20,12 @@ nodes:
             rotate-server-certificates: "false"
   - role: worker
     extraMounts:
-      - hostPath: ./certs/kubelet-eu.crt
+      - hostPath: ./certs/kubelet-mgmt.crt
         containerPath: /etc/kubernetes/pki/kubelet.crt
-      - hostPath: ./certs/kubelet-eu.key
+      - hostPath: ./certs/kubelet-mgmt.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+      - hostPath: /etc/ssl/certs/ca-certificates.crt
+        containerPath: /etc/ssl/certs/ca-certificates.crt
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -32,10 +36,28 @@ nodes:
             rotate-server-certificates: "false"
   - role: worker
     extraMounts:
-      - hostPath: ./certs/kubelet-eu.crt
+      - hostPath: ./certs/kubelet-mgmt.crt
         containerPath: /etc/kubernetes/pki/kubelet.crt
-      - hostPath: ./certs/kubelet-eu.key
+      - hostPath: ./certs/kubelet-mgmt.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+      - hostPath: /etc/ssl/certs/ca-certificates.crt
+        containerPath: /etc/ssl/certs/ca-certificates.crt
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            tls-cert-file: /etc/kubernetes/pki/kubelet.crt
+            tls-private-key-file: /etc/kubernetes/pki/kubelet.key
+            rotate-server-certificates: "false"
+  - role: worker
+    extraMounts:
+      - hostPath: ./certs/kubelet-mgmt.crt
+        containerPath: /etc/kubernetes/pki/kubelet.crt
+      - hostPath: ./certs/kubelet-mgmt.key
+        containerPath: /etc/kubernetes/pki/kubelet.key
+      - hostPath: /etc/ssl/certs/ca-certificates.crt
+        containerPath: /etc/ssl/certs/ca-certificates.crt
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -46,5 +68,5 @@ nodes:
             rotate-server-certificates: "false"
 networking:
   disableDefaultCNI: true
-  podSubnet: "10.20.0.0/16"
-  serviceSubnet: "10.21.0.0/16"
+  podSubnet: "10.100.0.0/16"
+  serviceSubnet: "10.101.0.0/16"
