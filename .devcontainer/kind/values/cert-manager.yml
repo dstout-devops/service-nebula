@@ -1,3 +1,23 @@
----
 crds:
   enabled: true
+  keep: true
+replicaCount: 2
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+webhook:
+  replicaCount: 2
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+prometheus:
+  enabled: true
+
+cainjector:
+  replicaCount: 2
+  enabled: true
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1

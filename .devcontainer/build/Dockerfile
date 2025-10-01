@@ -15,10 +15,14 @@ RUN mkdir -p -m 755 /etc/apt/keyrings && \
     chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg && \
     echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list && \
     chmod 644 /etc/apt/sources.list.d/kubernetes.list && \
+    # hashicorp
+    curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashi-apt-keyring.gpg && \
+    chmod 644 /etc/apt/keyrings/hashi-apt-keyring.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/hashi-apt-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashi-stable-debian.list && \
     # helm
     curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor -o /etc/apt/keyrings/helm-apt-keyring.gpg && \
     chmod 644 /etc/apt/keyrings/helm-apt-keyring.gpg && \
-    echo "deb [signed-by=//etc/apt/keyrings/helm-apt-keyring.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | tee /etc/apt/sources.list.d/helm-stable-debian.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/helm-apt-keyring.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | tee /etc/apt/sources.list.d/helm-stable-debian.list && \
     # step
     curl -fsSL https://packages.smallstep.com/keys/apt/repo-signing-key.gpg | gpg --dearmor -o /etc/apt/keyrings/smallstep-apt-keyring.gpg && \
     echo 'deb [signed-by=/etc/apt/keyrings/smallstep-apt-keyring.gpg] https://packages.smallstep.com/stable/debian debs main' | tee /etc/apt/sources.list.d/smallstep.list
@@ -34,5 +38,6 @@ RUN apt-get update && \
     apt-get install -y \
         helm \
         kubectl \
-        step-ca step-cli && \
+        step-ca step-cli \
+        consul consul-k8s && \
     rm -rf /var/lib/apt/lists/*

@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: vault-server-cert
+  namespace: vault
+spec:
+  secretName: vault-server-tls
+  issuerRef:
+    name: int-ca-issuer
+    kind: ClusterIssuer
+  duration: 2160h
+  renewBefore: 360h
+  commonName: "vault-server"
+  dnsNames:
+    - "vault.vault.svc"
+    - "vault.vault.svc.cluster.local"
+  additionalOutputFormats:
+  - type: CombinedPEM
