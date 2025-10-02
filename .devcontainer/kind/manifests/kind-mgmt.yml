@@ -6,10 +6,13 @@ nodes:
     extraMounts:
       - hostPath: ./certs/kubelet-mgmt.crt
         containerPath: /etc/kubernetes/pki/kubelet.crt
+        readOnly: true
       - hostPath: ./certs/kubelet-mgmt.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+        readOnly: true
       - hostPath: /etc/ssl/certs/ca-certificates.crt
         containerPath: /etc/ssl/certs/ca-certificates.crt
+        readOnly: true
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -22,10 +25,13 @@ nodes:
     extraMounts:
       - hostPath: ./certs/kubelet-mgmt.crt
         containerPath: /etc/kubernetes/pki/kubelet.crt
+        readOnly: true
       - hostPath: ./certs/kubelet-mgmt.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+        readOnly: true
       - hostPath: /etc/ssl/certs/ca-certificates.crt
         containerPath: /etc/ssl/certs/ca-certificates.crt
+        readOnly: true
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -38,10 +44,13 @@ nodes:
     extraMounts:
       - hostPath: ./certs/kubelet-mgmt.crt
         containerPath: /etc/kubernetes/pki/kubelet.crt
+        readOnly: true
       - hostPath: ./certs/kubelet-mgmt.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+        readOnly: true
       - hostPath: /etc/ssl/certs/ca-certificates.crt
         containerPath: /etc/ssl/certs/ca-certificates.crt
+        readOnly: true
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -54,10 +63,13 @@ nodes:
     extraMounts:
       - hostPath: ./certs/kubelet-mgmt.crt
         containerPath: /etc/kubernetes/pki/kubelet.crt
+        readOnly: true
       - hostPath: ./certs/kubelet-mgmt.key
         containerPath: /etc/kubernetes/pki/kubelet.key
+        readOnly: true
       - hostPath: /etc/ssl/certs/ca-certificates.crt
         containerPath: /etc/ssl/certs/ca-certificates.crt
+        readOnly: true
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
