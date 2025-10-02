@@ -3,6 +3,12 @@ set -euo pipefail
 
 trap 'echo "❌ Script failed at line $LINENO: $BASH_COMMAND"' ERR
 
+# this might be required, could also just be a timing thing
+
+# echo 'fs.inotify.max_user_watches=524288' | sudo tee /etc/sysctl.d/99-inotify.conf
+# echo 'fs.inotify.max_user_instances=4096' | sudo tee -a /etc/sysctl.d/99-inotify.conf
+# sudo sysctl --system
+
 #-------------------------------
 # UTILS
 #-------------------------------
