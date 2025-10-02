@@ -128,7 +128,7 @@ create_cluster() {
     exit 1
   fi
 
-  kind create cluster --name "${name}" --config "$config"
+  kind create cluster --config "$config"
 }
 
 install_cilium_on_cluster() {
@@ -145,9 +145,9 @@ install_cilium_on_cluster() {
     --set ipam.mode=kubernetes \
     --set hubble.relay.enabled=true \
     --set hubble.ui.enabled=true \
-    --set cluster.name="${name}" \
-    --set cluster.id="${index}" \
-    --kube-context "${context}"
+    --set cluster.name="mgmt" \
+    --set cluster.id="1" \
+    --kube-context "kind-mgmt"
 
   cilium status --wait --context "${context}"
   cilium clustermesh enable --context "${context}" --service-type NodePort

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+echo $DIR
 cd "$DIR"
 
 bash scripts/01-gen-root-ca.sh

@@ -33,3 +33,5 @@ step certificate create mgmt-control-plane \
   --no-password \
   --insecure \
   --force
+
+chown -R vscode:vscode certs
