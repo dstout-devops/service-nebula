@@ -1,2 +1,3 @@
-*.key
+**/certs/*.key
+**/certs/*.crt
 *.tar.gz
