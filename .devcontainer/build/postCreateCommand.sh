@@ -76,7 +76,7 @@ echo "📝 Step 2: Shell Environment Setup"
 echo "==================================="
 echo "Configuring shell environment..."
 sed -i 's/plugins=(git)/plugins=(docker kubectl kubectx)/' ~/.zshrc
-tofu -install-autocomplete
+tofu -install-autocomplete 2>/dev/null || true
 
 echo ""
 echo "🔧 Step 3: Tool Installation"

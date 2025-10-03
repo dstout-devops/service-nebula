@@ -1,77 +1,56 @@
-# Management cluster - created first as the foundation
-# Network: 10.0.0.0/16 (pods), 10.1.0.0/16 (services)
-module "mgmt_cluster" {
-  source = "./modules/kind-cluster"
+# Modern main.tf using object variables
+# Much cleaner and more maintainable!
 
-  cluster_name        = "mgmt"
-  control_plane_count = 1
-  worker_count        = 3
-  enable_ingress      = false
-
-  pod_subnet          = "10.250.0.0/16"
-  service_subnet      = "10.251.0.0/16"
-  disable_default_cni = true
-  kube_proxy_mode     = "nftables"
-  mount_host_ca_certs = true
+locals {
+  mgmt_cluster = var.clusters.mgmt
 }
 
-# Install Cilium CNI on management cluster
+# Management cluster - created first as the foundation
+module "mgmt_cluster" {
+  source = "./modules/kind-cluster"
+  kubeconfig_path = var.global_config.kubeconfig_path
+
+  cluster_name        = "mgmt"
+  control_plane_count = local.mgmt_cluster.control_plane_count
+  worker_count        = local.mgmt_cluster.worker_count
+  enable_ingress      = local.mgmt_cluster.enable_ingress
+
+  pod_subnet          = local.mgmt_cluster.pod_subnet
+  service_subnet      = local.mgmt_cluster.service_subnet
+  disable_default_cni = local.mgmt_cluster.disable_default_cni
+  kube_proxy_mode     = local.mgmt_cluster.kube_proxy_mode
+  mount_host_ca_certs = local.mgmt_cluster.mount_host_ca_certs
+}
+
 module "mgmt_cilium" {
   source = "./modules/cilium"
-
-  cluster_name     = module.mgmt_cluster.cluster_name
-  cluster_id       = 1
-  kubeconfig_path  = module.mgmt_cluster.kubeconfig_path
-
-  cilium_version    = "1.18.2"
-  ipam_mode         = "kubernetes"
-
-  enable_hubble    = true
-  enable_hubble_ui = true
-
-  # Use the aliased helm provider configured for mgmt cluster
   providers = {
     helm = helm.mgmt
   }
 
+  cluster_name     = module.mgmt_cluster.cluster_name
+  namespace        = var.global_config.default_namespace
+  cluster_id       = local.mgmt_cluster.cilium.cluster_id
+
+  cilium_version    = local.mgmt_cluster.cilium.version
+  ipam_mode         = local.mgmt_cluster.cilium.ipam_mode
+
+  enable_hubble    = local.mgmt_cluster.cilium.enable_hubble
+  enable_hubble_ui = local.mgmt_cluster.cilium.enable_hubble_ui
+
   depends_on = [module.mgmt_cluster]
 }
 
-# Future clusters can be added here with dependencies
-# Example workload cluster with non-overlapping networks:
-# Network: 10.2.0.0/16 (pods), 10.3.0.0/16 (services)
-#
-# module "workload_cluster" {
-#   source = "./modules/kind-cluster"
-#
-#   cluster_name        = "workload"
-#   control_plane_count = 1
-#   worker_count        = 2
-#   enable_ingress      = true
-#
-#   pod_subnet          = "10.2.0.0/16"
-#   service_subnet      = "10.3.0.0/16"
-#   disable_default_cni = true
-#   mount_host_ca_certs = true
-#
-#   depends_on = [module.mgmt_cluster]
-# }
-#
-# module "workload_cilium" {
-#   source = "./modules/cilium"
-#
-#   cluster_name = module.workload_cluster.cluster_name
-#   cluster_id   = 2
-#   kubeconfig   = module.workload_cluster.kubeconfig
-#
-#   enable_hubble    = true
-#   enable_hubble_ui = true
-#
-#   depends_on = [module.workload_cluster]
-# }
-#
-# Network allocation plan for cluster mesh:
-# Cluster 1 (mgmt):     ID=1, 10.0.0.0/16 (pods), 10.1.0.0/16 (services)
-# Cluster 2 (workload): ID=2, 10.2.0.0/16 (pods), 10.3.0.0/16 (services)
-# Cluster 3:            ID=3, 10.4.0.0/16 (pods), 10.5.0.0/16 (services)
-# Cluster 4:            ID=4, 10.6.0.0/16 (pods), 10.7.0.0/16 (services)
+module "mgmt_metrics_server" {
+  source = "./modules/metrics-server"
+  providers = {
+    helm = helm.mgmt
+  }
+
+  cluster_name           = module.mgmt_cluster.cluster_name
+  namespace              = var.global_config.default_namespace
+  metrics_server_version = local.mgmt_cluster.metrics_server.version
+  replicas               = local.mgmt_cluster.metrics_server.replicas
+
+  depends_on = [module.mgmt_cilium]
+}

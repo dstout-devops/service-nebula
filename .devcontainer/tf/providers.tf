@@ -1,21 +1,27 @@
 terraform {
   required_providers {
-    kind = {
-      source  = "tehcyx/kind"
-      version = "~> 0.9.0"
-    }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 3.0"
+    }
+    kind = {
+      source  = "tehcyx/kind"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+    }
+    null = {
+      source  = "hashicorp/null"
     }
   }
 }
 
-provider "kind" {}
 provider "helm" {
   alias = "mgmt"
   kubernetes = {
-    config_path    = pathexpand("~/.kube/config")
+    config_path    = var.global_config.kubeconfig_path
     config_context = "kind-mgmt"
   }
 }
+provider "kind" {}
+provider "kubernetes" {}
+provider "null" {}

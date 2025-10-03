@@ -13,9 +13,10 @@ variable "cluster_id" {
   }
 }
 
-variable "kubeconfig_path" {
-  description = "Path to the kubeconfig file for the cluster"
+variable "namespace" {
+  description = "Kubernetes namespace for Cilium"
   type        = string
+  default     = "kube-system"
 }
 
 variable "enable_hubble" {
@@ -39,7 +40,13 @@ variable "ipam_mode" {
 variable "cilium_version" {
   description = "Cilium chart version"
   type        = string
-  default     = "1.18.2"
+  default     = "stable"
+}
+
+variable "image_pull_policy" {
+  description = "Image pull policy for Cilium containers"
+  type        = string
+  default     = "IfNotPresent"
 }
 
 variable "hubble_ui_version" {

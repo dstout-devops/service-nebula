@@ -6,13 +6,8 @@ resource "null_resource" "prepull_images" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      echo "Pulling Cilium images locally..."
       docker pull quay.io/cilium/cilium:v${var.cilium_version}
-      
-      echo "Loading images into kind cluster ${var.cluster_name}..."
       kind load docker-image quay.io/cilium/cilium:v${var.cilium_version} --name ${var.cluster_name}
-      
-      echo "Cilium images loaded successfully into cluster!"
     EOT
   }
 }
@@ -23,12 +18,12 @@ resource "helm_release" "cilium" {
   repository = "https://helm.cilium.io/"
   chart      = "cilium"
   version    = var.cilium_version
-  namespace  = "kube-system"
+  namespace  = var.namespace
 
   set = [
     {
       name  = "image.pullPolicy"
-      value = "IfNotPresent"
+      value = var.image_pull_policy
     },
     {
       name  = "ipam.mode"

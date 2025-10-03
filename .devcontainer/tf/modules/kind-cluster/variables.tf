@@ -55,6 +55,12 @@ variable "kube_proxy_mode" {
   default     = "iptables"
 }
 
+variable "kubeconfig_path" {
+  description = "Path to the kubeconfig file for the cluster"
+  type        = string
+  default     = "~/.kube/config"
+}
+
 variable "mount_host_ca_certs" {
   description = "Mount host CA certificates into cluster nodes"
   type        = bool

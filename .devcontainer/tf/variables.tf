@@ -1,15 +1,68 @@
-# Root-level variables for cluster configuration
-
-variable "mgmt_worker_count" {
-  description = "Number of worker nodes for the management cluster"
-  type        = number
-  default     = 3
+variable "global_config" {
+  description = "Global configuration options"
+  type = object({
+    default_namespace = string
+    kubeconfig_path   = string
+  })
+  
+  default = {
+    default_namespace = "kube-system"
+    kubeconfig_path   = "~/.kube/config"
+  }
 }
 
-variable "mgmt_enable_ingress" {
-  description = "Enable ingress for the management cluster"
-  type        = bool
-  default     = false
+variable "clusters" {
+  description = "Cluster configurations"
+  type = map(object({
+    # Kind cluster configuration
+    worker_count         = number
+    control_plane_count  = number
+    enable_ingress      = bool
+    pod_subnet          = string
+    service_subnet      = string
+    kube_proxy_mode     = string
+    disable_default_cni = bool
+    mount_host_ca_certs = bool
+    
+    # Cilium configuration
+    cilium = object({
+      version    = string
+      cluster_id = number
+      ipam_mode  = string
+      enable_hubble     = bool
+      enable_hubble_ui  = bool
+    })
+    
+    # Metrics-server configuration
+    metrics_server = object({
+      version  = string
+      replicas = number
+    })
+  }))
+  
+  default = {
+    mgmt = {
+      worker_count         = 3
+      control_plane_count  = 1
+      enable_ingress      = false
+      pod_subnet          = "10.250.0.0/16"
+      service_subnet      = "10.251.0.0/16"
+      kube_proxy_mode     = "nftables"
+      disable_default_cni = true
+      mount_host_ca_certs = true
+      
+      cilium = {
+        version    = "1.8.2"
+        cluster_id = 250
+        ipam_mode  = "kubernetes"
+        enable_hubble     = true
+        enable_hubble_ui  = true
+      }
+      
+      metrics_server = {
+        version  = "latest"
+        replicas = 1
+      }
+    }
+  }
 }
-
-# Add more variables here as you add additional clusters

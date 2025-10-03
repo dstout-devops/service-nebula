@@ -1,3 +1,5 @@
+# Provider configuration for metrics-server module
+
 terraform {
   required_providers {
     helm = {
@@ -5,9 +7,6 @@ terraform {
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-    }
-    null = {
-      source  = "hashicorp/null"
     }
   }
 }
