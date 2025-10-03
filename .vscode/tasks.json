@@ -1,0 +1,119 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "DevContainer: Full Setup",
+            "type": "shell",
+            "command": "${workspaceFolder}/.devcontainer/build/postCreateCommand.sh",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "detail": "Complete DevContainer setup: pre-flight check, environment setup, tool installation, and Kind cluster creation"
+        },
+        {
+            "label": "Pre-flight Check: Clean Environment Only",
+            "type": "shell",
+            "command": "bash -c 'source \"${workspaceFolder}/.devcontainer/build/env.sh\" && chmod +x \"$SCRIPTS_ROOT\"/*.sh && source \"$SCRIPTS_ROOT/common.sh\" && echo \"🏗️ Terraform cleanup...\" && \"$SCRIPTS_ROOT/clean_terraform.sh\" && echo \"🎡 Kind cleanup...\" && \"$SCRIPTS_ROOT/clean_kind.sh\" && echo \"🐳 Docker cleanup...\" && \"$SCRIPTS_ROOT/clean_docker.sh\" && echo \"☸️ Kubernetes cleanup...\" && \"$SCRIPTS_ROOT/clean_kube.sh\" && echo \"🧹 Temp cleanup...\" && \"$SCRIPTS_ROOT/clean_temp.sh\" && echo \"🔍 Verification...\" && \"$SCRIPTS_ROOT/verify_clean.sh\" && echo \"🔧 Environment setup...\" && \"$SCRIPTS_ROOT/setup_env.sh\"'",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "detail": "Run optimized pre-flight check: Terraform→Kind→Docker→Kube→Temp→Verify→Setup"
+        },
+        {
+            "label": "Clean: Docker Only",
+            "type": "shell",
+            "command": "${workspaceFolder}/.devcontainer/build/scripts/clean_docker.sh",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "detail": "Clean Docker containers, images, volumes, and networks only"
+        },
+        {
+            "label": "Clean: Kind Clusters Only",
+            "type": "shell",
+            "command": "${workspaceFolder}/.devcontainer/build/scripts/clean_kind.sh",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "detail": "Clean Kind clusters only"
+        },
+        {
+            "label": "Clean: Terraform State Only",
+            "type": "shell",
+            "command": "${workspaceFolder}/.devcontainer/build/scripts/clean_terraform.sh",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "detail": "Clean Terraform/OpenTofu state files only"
+        },
+        {
+            "label": "Setup: Create Kind Cluster Only",
+            "type": "shell",
+            "command": "source .devcontainer/build/env.sh && cd \"$TERRAFORM_ROOT\" && mkdir -p \"$TF_DATA_DIR\" \"$TF_PLUGIN_CACHE_DIR\" && tofu init && tofu apply -auto-approve && kubectl config use-context kind-mgmt && kubectl cluster-info",
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [],
+            "detail": "Create Kind cluster only (assumes clean environment)"
+        }
+    ]
+}

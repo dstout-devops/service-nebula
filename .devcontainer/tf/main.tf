@@ -8,8 +8,8 @@ module "mgmt_cluster" {
   worker_count        = 3
   enable_ingress      = false
 
-  pod_subnet          = "10.0.0.0/16"
-  service_subnet      = "10.1.0.0/16"
+  pod_subnet          = "10.250.0.0/16"
+  service_subnet      = "10.251.0.0/16"
   disable_default_cni = true
   kube_proxy_mode     = "nftables"
   mount_host_ca_certs = true

@@ -18,8 +18,16 @@
 		}
 	},
 	"containerEnv": {
-		"NODE_EXTRA_CA_CERTS": "/etc/ssl/certs/ca-certificates.crt"
+		"NODE_EXTRA_CA_CERTS": "/etc/ssl/certs/ca-certificates.crt",
 	},
-	"postStartCommand": "chmod +x .devcontainer/build/postCreateCommand.sh && .devcontainer/build/postCreateCommand.sh"
-	// "customizations": {}
+	"postStartCommand": "chmod +x .devcontainer/build/*.sh && chmod +x .devcontainer/build/scripts/*.sh && .devcontainer/build/postCreateCommand.sh",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"hashicorp.terraform",
+				"ms-kubernetes-tools.vscode-kubernetes-tools",
+				"ms-vscode.vscode-json"
+			]
+		}
+	}
 }
