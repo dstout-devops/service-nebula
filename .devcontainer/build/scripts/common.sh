@@ -6,6 +6,10 @@ print_status() {
     echo "✅ $1"
 }
 
+print_success() {
+    echo "🎉 $1"
+}
+
 print_warning() {
     echo "⚠️  $1"
 }
@@ -16,4 +20,11 @@ print_error() {
 
 print_info() {
     echo "ℹ️  $1"
+}
+
+print_header() {
+    echo ""
+    echo "=================="
+    echo "🚀 $1"
+    echo "=================="
 }

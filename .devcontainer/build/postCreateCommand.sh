@@ -86,6 +86,12 @@ go install sigs.k8s.io/kind@latest
 go install sigs.k8s.io/cloud-provider-kind@latest
 
 echo ""
+echo "🛠️  Step 3.1: Cilium and Hubble CLI Installation"
+echo "==============================================="
+echo "Installing Cilium and Hubble CLI tools..."
+"$SCRIPT_DIR/scripts/install_cilium_tools.sh"
+
+echo ""
 echo "☸️  Step 4: Kubernetes Infrastructure Setup"
 echo "==========================================="
 echo "Creating kind cluster 'mgmt' with OpenTofu..."

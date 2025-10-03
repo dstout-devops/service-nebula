@@ -38,6 +38,14 @@ variable "clusters" {
       version  = string
       replicas = number
     })
+    
+    # Vault configuration
+    vault = object({
+      deployment_mode = string
+      version        = string
+      enable_ui      = bool
+      ha_replicas    = number
+    })
   }))
   
   default = {
@@ -52,7 +60,7 @@ variable "clusters" {
       mount_host_ca_certs = true
       
       cilium = {
-        version    = "1.8.2"
+        version    = "1.18.2"
         cluster_id = 250
         ipam_mode  = "kubernetes"
         enable_hubble     = true
@@ -60,8 +68,15 @@ variable "clusters" {
       }
       
       metrics_server = {
-        version  = "latest"
+        version  = "3.13.0"
         replicas = 1
+      }
+      
+      vault = {
+        deployment_mode = "standalone"  # Options: standalone, standalone-tls, ha-raft, ha-raft-tls
+        version        = "0.31.0"
+        enable_ui      = true
+        ha_replicas    = 3
       }
     }
   }

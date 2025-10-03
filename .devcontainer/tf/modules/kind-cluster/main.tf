@@ -1,6 +1,9 @@
 resource "kind_cluster" "this" {
   name = var.cluster_name
   kubeconfig_path = pathexpand(var.kubeconfig_path)
+  
+  # Ensure registry configs exist before creating cluster
+  depends_on = [local_file.registry_mirror_configs]
 
   kind_config {
     kind        = "Cluster"
@@ -17,6 +20,9 @@ resource "kind_cluster" "this" {
       }
     }
 
+    # Containerd configuration patches (e.g., for registry mirrors)
+    containerd_config_patches = var.containerd_config_patches
+
     # Control plane nodes
     dynamic "node" {
       for_each = range(var.control_plane_count)
@@ -29,6 +35,16 @@ resource "kind_cluster" "this" {
           content {
             host_path      = "/etc/ssl/certs/ca-certificates.crt"
             container_path = "/etc/ssl/certs/ca-certificates.crt"
+            read_only      = true
+          }
+        }
+
+        # Mount registry mirror configs
+        dynamic "extra_mounts" {
+          for_each = var.registry_mirrors
+          content {
+            host_path      = "/tmp/kind-registry-${var.cluster_name}/${extra_mounts.key}"
+            container_path = "/etc/containerd/certs.d/${extra_mounts.key}"
             read_only      = true
           }
         }
@@ -72,9 +88,18 @@ resource "kind_cluster" "this" {
             read_only      = true
           }
         }
+
+        # Mount registry mirror configs
+        dynamic "extra_mounts" {
+          for_each = var.registry_mirrors
+          content {
+            host_path      = "/tmp/kind-registry-${var.cluster_name}/${extra_mounts.key}"
+            container_path = "/etc/containerd/certs.d/${extra_mounts.key}"
+            read_only      = true
+          }
+        }
       }
     }
   }
 }
-
 

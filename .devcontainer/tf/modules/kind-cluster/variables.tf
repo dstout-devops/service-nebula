@@ -66,3 +66,21 @@ variable "mount_host_ca_certs" {
   type        = bool
   default     = true
 }
+
+variable "containerd_config_patches" {
+  description = "List of containerd configuration patches to apply"
+  type        = list(string)
+  default     = []
+}
+
+variable "registry_network" {
+  description = "Docker network name to connect Kind nodes for registry access"
+  type        = string
+  default     = null
+}
+
+variable "registry_mirrors" {
+  description = "Map of registry hostnames to their mirror endpoints"
+  type        = map(string)
+  default     = {}
+}

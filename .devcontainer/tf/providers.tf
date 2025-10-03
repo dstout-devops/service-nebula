@@ -1,5 +1,9 @@
 terraform {
   required_providers {
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "~> 3.0"
+    }
     helm = {
       source  = "hashicorp/helm"
     }
@@ -9,10 +13,17 @@ terraform {
     kubernetes = {
       source  = "hashicorp/kubernetes"
     }
+    local = {
+      source  = "hashicorp/local"
+    }
     null = {
       source  = "hashicorp/null"
     }
   }
+}
+
+provider "docker" {
+  host = "unix:///var/run/docker.sock"
 }
 
 provider "helm" {
@@ -23,5 +34,12 @@ provider "helm" {
   }
 }
 provider "kind" {}
-provider "kubernetes" {}
+
+provider "kubernetes" {
+  alias          = "mgmt"
+  config_path    = var.global_config.kubeconfig_path
+  config_context = "kind-mgmt"
+}
+provider "local" {}
+
 provider "null" {}

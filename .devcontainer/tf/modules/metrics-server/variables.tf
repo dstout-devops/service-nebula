@@ -6,7 +6,7 @@ variable "cluster_name" {
 variable "metrics_server_version" {
   description = "Version of the metrics-server Helm chart"
   type        = string
-  default     = "3.12.1"
+  default     = "3.13.0"
 }
 
 variable "namespace" {
