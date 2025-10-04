@@ -2,13 +2,13 @@
 # This solves the chicken-and-egg problem: CNI needs network, but network needs CNI
 resource "null_resource" "prepull_images" {
   triggers = {
-    cluster_name    = var.cluster_name
-    cilium_version  = var.cilium_version
+    cluster_name   = var.cluster_name
+    cilium_version = var.cilium_version
   }
 
   provisioner "local-exec" {
     interpreter = ["/bin/bash", "-c"]
-    command = <<-EOT
+    command     = <<-EOT
       set -e
       echo "🔄 Extracting images from Cilium Helm chart v${var.cilium_version}..."
       
@@ -69,7 +69,7 @@ resource "helm_release" "cilium" {
   set = [
     {
       name  = "image.pullPolicy"
-      value = "IfNotPresent"  # Use pre-loaded images
+      value = "IfNotPresent" # Use pre-loaded images
     },
     {
       name  = "operator.image.pullPolicy"

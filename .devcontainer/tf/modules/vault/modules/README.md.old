@@ -1,0 +1,137 @@
+# Vault Submodules
+
+This directory contains submodules for organizing Vault configuration by functional area.
+
+## Submodule Structure
+
+### `tls/`
+Manages TLS/CA infrastructure for Vault server itself:
+- Root CA generation (self-signed)
+- Intermediate CA generation (signed by root)
+- Server certificates for Vault pods
+- Kubernetes secrets for TLS materials
+
+**Purpose**: Secure Vault server communications (not for application certificates)
+
+### `pki-engine/`
+Manages PKI secrets engine for issuing application certificates:
+- PKI mount configuration
+- Root CA generation within Vault PKI
+- PKI role for cert-manager
+- Kubernetes authentication backend
+- Vault policies for cert-manager access
+
+**Purpose**: Issue certificates for applications/services via cert-manager
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Vault Main Module                    │
+│  (Helm deployment, orchestration, high-level config)   │
+└─────────────────────────────────────────────────────────┘
+                           │
+                           │ Uses submodules
+                           ▼
+        ┌──────────────────┴──────────────────┐
+        │                                     │
+        ▼                                     ▼
+┌──────────────────┐              ┌─────────────────────┐
+│  TLS Submodule   │              │ PKI Engine Submodule │
+│                  │              │                     │
+│ • Root CA        │              │ • PKI Mount         │
+│ • Intermediate   │              │ • Internal Root CA  │
+│ • Server Cert    │              │ • PKI Role          │
+│ • K8s Secret     │              │ • K8s Auth          │
+│                  │              │ • Policies          │
+└──────────────────┘              └─────────────────────┘
+        │                                     │
+        │                                     │
+        ▼                                     ▼
+   Vault Server                        cert-manager
+   TLS Security                    Certificate Issuance
+```
+
+## Two Separate CA Hierarchies
+
+### 1. Vault Server TLS (tls/ submodule)
+- **Purpose**: Secure communication TO Vault servers
+- **Scope**: Vault pods only
+- **Generated**: Outside Vault (Terraform TLS provider)
+- **Storage**: Kubernetes secrets
+
+```
+Root CA (tls/)
+  └─ Intermediate CA
+       └─ Vault Server Certificates
+```
+
+### 2. Vault PKI for Applications (pki-engine/ submodule)
+- **Purpose**: Issue certificates FOR applications/services
+- **Scope**: All services using cert-manager
+- **Generated**: Inside Vault PKI (vault_pki_secret_backend_root_cert)
+- **Storage**: Vault internal storage
+
+```
+PKI Root CA (inside Vault)
+  └─ Application Certificates (via cert-manager)
+       ├─ Injector TLS
+       ├─ Future service certs
+       └─ ...
+```
+
+## Usage
+
+Each submodule is called from the main Vault module:
+
+```hcl
+module "tls" {
+  source = "./modules/tls"
+  
+  enabled   = var.tls.enabled
+  namespace = var.namespace
+  
+  root_ca = {
+    common_name  = "Vault Root CA"
+    organization = "MyOrg"
+    # ...
+  }
+}
+
+module "pki_engine" {
+  source = "./modules/pki-engine"
+  
+  enabled    = var.cert_manager_integration.enabled
+  mount_path = "pki"
+  vault_addr = "https://vault.vault.svc.cluster.local:8200"
+  
+  kubernetes_auth = {
+    enabled                    = true
+    kubernetes_host            = "https://kubernetes.default.svc"
+    kubernetes_ca_cert         = file("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+    service_account_names      = ["cert-manager"]
+    service_account_namespaces = ["cert-manager"]
+  }
+  
+  depends_on = [helm_release.vault]
+}
+```
+
+## Future Submodules
+
+As we expand Vault capabilities, additional submodules can be added:
+
+- `kv-engine/` - Key-Value secrets storage
+- `database-engine/` - Dynamic database credentials
+- `transit-engine/` - Encryption as a service
+- `aws-engine/` - Dynamic AWS credentials
+- `kubernetes-auth/` - Centralized K8s auth (if needed separately)
+
+## Benefits of Submodule Organization
+
+1. **Modularity**: Each secrets engine is self-contained
+2. **Reusability**: Submodules can be enabled/disabled independently
+3. **Maintainability**: Easier to update individual components
+4. **Scalability**: Simple to add new secrets engines
+5. **Testing**: Can test each submodule in isolation
+6. **Documentation**: Clear separation of concerns

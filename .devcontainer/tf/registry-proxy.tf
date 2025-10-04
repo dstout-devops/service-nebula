@@ -24,6 +24,11 @@
 # Deploy registry proxy containers
 module "registry_proxy" {
   source = "./modules/registry-proxy"
+
+  # Network configuration
+  network_name = var.registry_proxy.network_name
+  subnet       = var.registry_proxy.subnet
+  gateway      = var.registry_proxy.gateway
 }
 
 # Local configuration for registry mirrors
@@ -36,7 +41,7 @@ locals {
     "quay.io"         = "http://${module.registry_proxy.registry_ips["quay.io"]}:5000"
     "registry.k8s.io" = "http://${module.registry_proxy.registry_ips["registry.k8s.io"]}:5000"
   }
-  
+
   # Containerd v2 configuration patch for registry caching
   # Uses config_path to enable per-registry configuration via certs.d/
   containerd_registry_config = <<-EOT

@@ -1,7 +1,7 @@
 resource "kind_cluster" "this" {
-  name = var.cluster_name
+  name            = var.cluster_name
   kubeconfig_path = pathexpand(var.kubeconfig_path)
-  
+
   # Ensure registry configs exist before creating cluster
   depends_on = [local_file.registry_mirror_configs]
 

@@ -17,10 +17,10 @@ output "containerd_config_patch" {
           [plugins."io.containerd.grpc.v1.cri".registry.mirrors."${registry}"]
             endpoint = ["http://host.docker.internal:${config.port}"]
           MIRROR
-          ])}
+  ])}
       EOT
-    ]
-  })
+]
+})
 }
 
 output "proxy_status" {
@@ -28,8 +28,8 @@ output "proxy_status" {
   value = {
     for registry, config in var.registries : registry => {
       container_name = docker_container.registry_proxy[registry].name
-      port          = config.port
-      health_url    = "http://127.0.0.1:${config.port}/v2/"
+      port           = config.port
+      health_url     = "http://127.0.0.1:${config.port}/v2/"
     }
   }
 }

@@ -1,13 +1,13 @@
 terraform {
   required_providers {
     helm = {
-      source  = "hashicorp/helm"
+      source = "hashicorp/helm"
     }
     kubernetes = {
-      source  = "hashicorp/kubernetes"
+      source = "hashicorp/kubernetes"
     }
     null = {
-      source  = "hashicorp/null"
+      source = "hashicorp/null"
     }
   }
 }

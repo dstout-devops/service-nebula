@@ -1,10 +1,10 @@
 terraform {
-    required_providers {
+  required_providers {
     docker = {
-      source  = "kreuzwerker/docker"
+      source = "kreuzwerker/docker"
     }
     null = {
-      source  = "hashicorp/null"
+      source = "hashicorp/null"
     }
   }
 }

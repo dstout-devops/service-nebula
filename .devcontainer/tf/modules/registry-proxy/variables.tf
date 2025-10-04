@@ -1,3 +1,21 @@
+variable "network_name" {
+  description = "Name of the Docker network for registry proxies"
+  type        = string
+  default     = "registry-proxies"
+}
+
+variable "subnet" {
+  description = "Subnet for the registry proxy network"
+  type        = string
+  default     = "172.20.0.0/16"
+}
+
+variable "gateway" {
+  description = "Gateway IP for the registry proxy network"
+  type        = string
+  default     = "172.20.0.1"
+}
+
 variable "registries" {
   description = "Map of registries to create proxies for"
   type = map(object({

@@ -2,7 +2,7 @@
 # Create local directory with registry mirror configs (before cluster creation)
 resource "local_file" "registry_mirror_configs" {
   for_each = var.registry_mirrors
-  
+
   filename = "/tmp/kind-registry-${var.cluster_name}/${each.key}/hosts.toml"
   content  = <<-EOT
     server = "https://${each.key}"
@@ -18,9 +18,9 @@ resource "null_resource" "connect_to_registry_network" {
     ["${var.cluster_name}-control-plane"],
     [for i in range(var.worker_count) : "${var.cluster_name}-worker${i > 0 ? i + 1 : ""}"]
   )) : toset([])
-  
+
   depends_on = [kind_cluster.this]
-  
+
   provisioner "local-exec" {
     command = "docker network connect ${var.registry_network} ${each.key} 2>/dev/null || true"
   }
