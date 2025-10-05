@@ -18,9 +18,20 @@
 		}
 	},
 	"containerEnv": {
-		"NODE_EXTRA_CA_CERTS": "/etc/ssl/certs/ca-certificates.crt",
+		"NODE_EXTRA_CA_CERTS": "/etc/ssl/certs/ca-certificates.crt"
 	},
-	"postStartCommand": "chmod +x .devcontainer/build/*.sh && chmod +x .devcontainer/build/scripts/*.sh && .devcontainer/build/postCreateCommand.sh",
+	"forwardPorts": [8080, 8443],
+	"portsAttributes": {
+		"8080": {
+			"label": "Traefik HTTP",
+			"onAutoForward": "notify"
+		},
+		"8443": {
+			"label": "Traefik HTTPS",
+			"onAutoForward": "notify"
+		}
+	},
+	"postStartCommand": "chmod +x .devcontainer/build/*.sh && .devcontainer/build/postCreateCommand.sh",
 	"customizations": {
 		"vscode": {
 			"extensions": [

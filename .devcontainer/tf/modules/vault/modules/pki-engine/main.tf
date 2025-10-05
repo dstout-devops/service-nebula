@@ -2,14 +2,6 @@
 # Manages PKI secrets engine configuration for cert-manager integration
 # This is for issuing APPLICATION certificates, NOT for Vault server TLS
 
-terraform {
-  required_providers {
-    vault = {
-      source = "hashicorp/vault"
-    }
-  }
-}
-
 # ============================================================================
 # PKI Secrets Engine Mount
 # ============================================================================

@@ -2,17 +2,6 @@
 # Manages the CA hierarchy and TLS certificates for Vault server deployment
 # This is for Vault's own TLS communications, NOT for the PKI secrets engine
 
-terraform {
-  required_providers {
-    tls = {
-      source = "hashicorp/tls"
-    }
-    kubernetes = {
-      source = "hashicorp/kubernetes"
-    }
-  }
-}
-
 # ============================================================================
 # Root CA
 # ============================================================================

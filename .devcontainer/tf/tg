@@ -1,0 +1,183 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Terragrunt Helper Commands
+# Common operations for managing the infrastructure
+# =============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+show_help() {
+    cat << EOF
+Terragrunt Infrastructure Helper
+
+Usage: $0 <command> [options]
+
+Commands:
+  apply         Run three-stage apply (creates or updates infrastructure)
+  destroy       Destroy all infrastructure
+  plan          Show planned changes without applying
+  validate      Validate Terragrunt configuration
+  fmt           Format Terraform/Terragrunt files
+  
+  # Cluster operations
+  cluster-info  Show cluster information
+  pods          Show all pods across namespaces
+  vault-token   Extract and display Vault root token
+  vault-ui      Open Vault UI (sets up port-forward)
+  traefik-ui    Open Traefik dashboard (sets up port-forward)
+  
+  # Debugging
+  logs          Show logs for a specific pod/deployment
+  exec          Execute command in a pod
+  port-forward  Set up port-forward to a service
+  check-registry  Verify registry mirror configuration
+
+Options:
+  -h, --help    Show this help message
+
+Examples:
+  $0 apply              # Deploy infrastructure
+  $0 cluster-info       # Show cluster details
+  $0 vault-token        # Get Vault root token
+  $0 logs vault         # Show Vault logs
+  $0 port-forward vault 8200  # Forward Vault to localhost:8200
+
+EOF
+}
+
+case "${1:-}" in
+    apply)
+        shift
+        "$SCRIPT_DIR/apply.sh" "$@"
+        ;;
+    
+    destroy)
+        shift
+        "$SCRIPT_DIR/destroy.sh" "$@"
+        ;;
+    
+    plan)
+        cd "$SCRIPT_DIR"
+        terragrunt plan
+        ;;
+    
+    validate)
+        cd "$SCRIPT_DIR"
+        terragrunt validate
+        ;;
+    
+    fmt)
+        cd "$SCRIPT_DIR"
+        terragrunt hclfmt
+        terraform fmt -recursive
+        ;;
+    
+    cluster-info)
+        echo "=== Cluster Information ==="
+        kubectl cluster-info
+        echo ""
+        echo "=== Nodes ==="
+        kubectl get nodes -o wide
+        echo ""
+        echo "=== Namespaces ==="
+        kubectl get namespaces
+        ;;
+    
+    pods)
+        kubectl get pods -A -o wide
+        ;;
+    
+    vault-token)
+        if kubectl get secret vault-unseal-keys -n vault >/dev/null 2>&1; then
+            TOKEN=$(kubectl get secret vault-unseal-keys -n vault -o jsonpath='{.data.root-token}' | base64 -d)
+            echo "Vault Root Token: $TOKEN"
+            echo ""
+            echo "Export it:"
+            echo "  export VAULT_TOKEN=$TOKEN"
+        else
+            echo "❌ Vault not initialized yet (vault-unseal-keys secret not found)"
+            exit 1
+        fi
+        ;;
+    
+    vault-ui)
+        echo "🔌 Setting up Vault port-forward..."
+        echo "Access Vault UI at: https://localhost:8200/ui/"
+        echo ""
+        TOKEN=$(kubectl get secret vault-unseal-keys -n vault -o jsonpath='{.data.root-token}' | base64 -d)
+        echo "Root Token: $TOKEN"
+        echo ""
+        echo "Press Ctrl+C to stop port-forward"
+        kubectl port-forward -n vault svc/vault 8200:8200
+        ;;
+    
+    traefik-ui)
+        echo "🔌 Setting up Traefik port-forward..."
+        echo "Access Traefik Dashboard at: http://localhost:8080/dashboard/"
+        echo ""
+        echo "Press Ctrl+C to stop port-forward"
+        kubectl port-forward -n traefik --address 0.0.0.0 svc/traefik 8080:80 8443:443
+        ;;
+    
+    logs)
+        if [ -z "${2:-}" ]; then
+            echo "❌ Usage: $0 logs <pod-name-or-label>"
+            exit 1
+        fi
+        # Try to find pod by name or label
+        kubectl logs -f -l "app.kubernetes.io/name=$2" --all-containers=true 2>/dev/null || \
+        kubectl logs -f "$2" --all-containers=true
+        ;;
+    
+    exec)
+        if [ -z "${2:-}" ]; then
+            echo "❌ Usage: $0 exec <pod-name> [command]"
+            exit 1
+        fi
+        shift
+        POD=$1
+        shift
+        kubectl exec -it "$POD" -- "${@:-sh}"
+        ;;
+    
+    port-forward)
+        if [ -z "${2:-}" ] || [ -z "${3:-}" ]; then
+            echo "❌ Usage: $0 port-forward <service-name> <port>"
+            exit 1
+        fi
+        echo "🔌 Forwarding $2:$3 to localhost:$3..."
+        echo "Press Ctrl+C to stop"
+        kubectl port-forward "svc/$2" "$3:$3"
+        ;;
+    
+    check-registry)
+        echo "=== Registry Mirror Configuration ==="
+        echo ""
+        echo "Directory permissions:"
+        ls -la /tmp/ | grep kind-registry || echo "❌ No registry directories found"
+        echo ""
+        if [ -d "/tmp/kind-registry-mgmt" ]; then
+            echo "Registry subdirectories:"
+            ls -la /tmp/kind-registry-mgmt/
+            echo ""
+            echo "hosts.toml files:"
+            find /tmp/kind-registry-mgmt -name "hosts.toml" -exec echo "  {}" \; -exec head -3 {} \; -exec echo "" \;
+        fi
+        echo ""
+        echo "Registry proxy containers:"
+        docker ps --filter "label=com.service-nebula.component=registry-proxy" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+        ;;
+    
+    -h|--help|help|"")
+        show_help
+        ;;
+    
+    *)
+        echo "❌ Unknown command: $1"
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac

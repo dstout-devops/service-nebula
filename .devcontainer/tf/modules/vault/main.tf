@@ -264,8 +264,9 @@ resource "helm_release" "vault" {
     ))
   ]
 
-  wait          = true
-  wait_for_jobs = true
+  # Don't wait for pods to be ready - they need init/unseal first
+  wait          = false
+  wait_for_jobs = false
   timeout       = 600
 
   depends_on = [kubernetes_namespace.vault]

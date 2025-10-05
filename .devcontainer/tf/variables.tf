@@ -144,6 +144,30 @@ variable "clusters" {
         class = string
       })
     })
+
+    # Traefik Ingress Controller configuration
+    traefik = optional(object({
+      enabled          = bool
+      namespace        = string
+      create_namespace = bool
+      release_name     = string
+      chart_version    = string
+      deployment       = any
+      service          = any
+      ports            = any
+      providers        = any
+      logs             = any
+      metrics          = any
+      dashboard        = any
+      security_context = any
+      pod_security_context = any
+      resources        = any
+      tls_config       = any
+      create_default_middleware = bool
+      default_middlewares = any
+      create_ingress_routes = bool
+      ingress_routes   = any
+    }))
   }))
 
   default = {

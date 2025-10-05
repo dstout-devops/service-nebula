@@ -1,19 +1,5 @@
 # Vault Initialization Submodule
 # Handles automated initialization and unsealing of Vault
-
-terraform {
-  required_providers {
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "~> 2.0"
-    }
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.0"
-    }
-  }
-}
-
 # Wait for Vault pods to be ready
 resource "null_resource" "wait_for_vault" {
   triggers = {
@@ -76,7 +62,8 @@ resource "null_resource" "vault_init" {
       # Check if already initialized
       POD_NAME=$(kubectl get pods -n ${var.namespace} -l app.kubernetes.io/name=vault -o jsonpath='{.items[0].metadata.name}')
       
-      if kubectl exec -n ${var.namespace} $POD_NAME -- vault status 2>&1 | grep -q "Sealed.*true\|Initialized.*false"; then
+      # Only initialize if Vault shows "Initialized false"
+      if kubectl exec -n ${var.namespace} $POD_NAME -- vault status 2>&1 | grep -q "Initialized.*false"; then
         echo "Initializing Vault..."
         
         # Determine key shares based on deployment mode

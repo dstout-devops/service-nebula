@@ -3,7 +3,7 @@
 
 provider "registry.opentofu.org/gavinbunney/kubectl" {
   version     = "1.19.0"
-  constraints = "~> 1.14"
+  constraints = "~> 1.19"
   hashes = [
     "h1:9QkxPjp0x5FZFfJbE+B7hBOoads9gmdfj9aYu5N4Sfc=",
     "zh:1dec8766336ac5b00b3d8f62e3fff6390f5f60699c9299920fc9861a76f00c71",
@@ -25,7 +25,8 @@ provider "registry.opentofu.org/gavinbunney/kubectl" {
 }
 
 provider "registry.opentofu.org/hashicorp/helm" {
-  version = "3.0.2"
+  version     = "3.0.2"
+  constraints = "~> 3.0"
   hashes = [
     "h1:17Ro1Gs9aCN5QGQ6RDvuianmNV3AxgegYqTJODlYdHI=",
     "zh:100f75a700074568cfaee7884e4477c50b5468e086db5bb95d7d519581b65621",
@@ -42,7 +43,8 @@ provider "registry.opentofu.org/hashicorp/helm" {
 }
 
 provider "registry.opentofu.org/hashicorp/kubernetes" {
-  version = "2.38.0"
+  version     = "2.38.0"
+  constraints = "~> 2.0"
   hashes = [
     "h1:nY7J9jFXcsRINog0KYagiWZw1GVYF9D2JmtIB7Wnrao=",
     "zh:1096b41c4e5b2ee6c1980916fb9a8579bc1892071396f7a9432be058aabf3cbc",
@@ -58,7 +60,8 @@ provider "registry.opentofu.org/hashicorp/kubernetes" {
 }
 
 provider "registry.opentofu.org/hashicorp/local" {
-  version = "2.5.3"
+  version     = "2.5.3"
+  constraints = "~> 2.0"
   hashes = [
     "h1:mC9+u1eaUILTjxey6Ivyf/3djm//RNNze9kBVX/trng=",
     "zh:32e1d4b0595cea6cda4ca256195c162772ddff25594ab4008731a2ec7be230bf",
@@ -75,7 +78,8 @@ provider "registry.opentofu.org/hashicorp/local" {
 }
 
 provider "registry.opentofu.org/hashicorp/null" {
-  version = "3.2.4"
+  version     = "3.2.4"
+  constraints = "~> 3.0"
   hashes = [
     "h1:jsKjBiLb+v3OIC3xuDiY4sR0r1OHUMSWPYKult9MhT0=",
     "zh:1769783386610bed8bb1e861a119fe25058be41895e3996d9216dd6bb8a7aee3",
@@ -92,7 +96,8 @@ provider "registry.opentofu.org/hashicorp/null" {
 }
 
 provider "registry.opentofu.org/hashicorp/tls" {
-  version = "4.1.0"
+  version     = "4.1.0"
+  constraints = "~> 4.0"
   hashes = [
     "h1:MByilNnYPdjPTlb/qcNgR0DErA6550hI6wd8OJYB1vw=",
     "zh:187a99f0d236fd92da224e2f026c4ca8f1dcbf2b5cddc8e6896801bacfab0d73",
@@ -109,20 +114,19 @@ provider "registry.opentofu.org/hashicorp/tls" {
 }
 
 provider "registry.opentofu.org/hashicorp/vault" {
-  version     = "4.8.0"
-  constraints = "~> 4.0"
+  version     = "5.3.0"
+  constraints = "~> 5.0"
   hashes = [
-    "h1:SQkjClJDo6SETUnq912GO8BdEExhU1ko8IG2mr4X/2A=",
-    "zh:0c07ef884c03083b08a54c2cf782f3ff7e124b05e7a4438a0b90a86e60c8d080",
-    "zh:13dcf2ed494c79e893b447249716d96b665616a868ffaf8f2c5abef07c7eee6f",
-    "zh:6f15a29fae3a6178e5904e3c95ba22b20f362d8ee491da816048c89f30e6b2de",
-    "zh:94b92a4bf7a2d250d9698a021f1ab60d1957d01b5bab81f7d9c00c2d6a9b3747",
-    "zh:a9e207540ef12cd2402e37b3b7567e08de14061a0a2635fd2f4fd09e0a3382aa",
-    "zh:b41667938ba541e8492036415b3f51fbd1758e456f6d5f0b63e26f4ad5728b21",
-    "zh:df0b73aff5f4b51e08fc0c273db7f677994db29a81deda66d91acfcfe3f1a370",
-    "zh:df904b217dc79b71a8b5f5f3ab2e52316d0f890810383721349cc10a72f7265b",
-    "zh:f0e0b3e6782e0126c40f05cf87ec80978c7291d90f52d7741300b5de1d9c01ba",
-    "zh:f8e599718b0ea22658eaa3e590671d3873aa723e7ce7d00daf3460ab41d3af14",
+    "h1:MVP/hsKL/HtSK4X6JURW0RTrTgSqJdOLqNuTEwUgaqY=",
+    "zh:0443eae5c2fa688f794f6aa4eb01fc22cb8b903e0f86b846bc341f07885cf084",
+    "zh:1f08a5f4aebccce3cc8daa7ba32c89145f5af85c08bea4be1498c3f090aa1179",
+    "zh:2f9abd4f31964bd798daec2aca51a519934dce54585203122d550c8c960afcd1",
+    "zh:51aae772f54c332b6c40ba058e5fe31cec34f6f557b262c83d0bd613d11d58c1",
+    "zh:6c2331a804a6e3e0f30f707a4484a5817821c065f07a0b74e8225d267f1406e3",
+    "zh:a1c5bf3d72a0d8e688d4de26a3da7aadc5a827a1f469304436561ad5017adbdd",
+    "zh:b98e666b3124baa945c72b047ffd9a3b9e1765a95080f73735ef98cce244b889",
+    "zh:e0bcb3128d3b7af3e090f2e9c8a5727b1ac138b57835ed4d79a8fdddf74a7031",
+    "zh:f4d84985770ee54bb57611ece5186f3c83d3edec13c66d263d3efd474fe6e0e5",
   ]
 }
 
@@ -148,7 +152,8 @@ provider "registry.opentofu.org/kreuzwerker/docker" {
 }
 
 provider "registry.opentofu.org/tehcyx/kind" {
-  version = "0.9.0"
+  version     = "0.9.0"
+  constraints = "~> 0.9"
   hashes = [
     "h1:X+GBBnJ8+0lfprSxOCDG0tRWltXMYlxJDbicE3I8Z4I=",
     "zh:315628279e657b868565b6d54b892982b27d6db95393d1cac646dd736af208e5",

@@ -3,20 +3,6 @@
 # https://cert-manager.io/docs/installation/helm/
 # https://artifacthub.io/packages/helm/cert-manager/cert-manager
 
-terraform {
-  required_providers {
-    helm = {
-      source = "hashicorp/helm"
-    }
-    kubernetes = {
-      source = "hashicorp/kubernetes"
-    }
-    kubectl = {
-      source = "gavinbunney/kubectl"
-    }
-  }
-}
-
 # Create namespace if requested
 resource "kubernetes_namespace" "cert_manager" {
   count = var.create_namespace ? 1 : 0

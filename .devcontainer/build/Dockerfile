@@ -58,6 +58,7 @@ RUN apt-get update \
 
 COPY --from=hashicorp/vault:latest /bin/vault /bin/
 COPY --from=ghcr.io/opentofu/opentofu:minimal /usr/local/bin/tofu /usr/local/bin/
+COPY --from=docker.io/alpine/terragrunt:latest /usr/local/bin/terragrunt /usr/local/bin/
 
 ADD https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb /tmp/k9s.deb
 RUN apt-get install -y /tmp/k9s.deb && rm /tmp/k9s.deb

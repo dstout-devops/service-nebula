@@ -66,6 +66,7 @@ resource "helm_release" "cilium" {
   version    = var.cilium_version
   namespace  = var.namespace
 
+  # Image pull policy settings
   set = [
     {
       name  = "image.pullPolicy"
@@ -91,6 +92,7 @@ resource "helm_release" "cilium" {
       name  = "hubble.ui.backend.image.pullPolicy"
       value = "IfNotPresent"
     },
+    # Cluster configuration
     {
       name  = "ipam.mode"
       value = var.ipam_mode
@@ -103,6 +105,7 @@ resource "helm_release" "cilium" {
       name  = "cluster.id"
       value = var.cluster_id
     },
+    # Hubble settings
     {
       name  = "hubble.relay.enabled"
       value = var.enable_hubble

@@ -157,68 +157,68 @@ variable "features" {
   }
 }
 
-# Vault Issuer Configuration
+# Vault Issuer Configuration (DEPRECATED - use issuer submodule instead)
 # Configuration for Vault PKI Issuer - integrates with Vault's PKI secrets engine
 # Requires Vault to be deployed first with PKI configured and Kubernetes auth enabled
+# 
+# NOTE: This variable is deprecated. Use the issuer submodule instead:
+#   module "vault_issuer" {
+#     source = "./modules/cert-manager/modules/issuer"
+#     ...
+#   }
 variable "vault_issuer" {
-  description = "Vault PKI Issuer configuration (requires Vault PKI and auth configured)"
+  description = "DEPRECATED: Use issuer submodule. Vault PKI Issuer configuration (requires Vault PKI and auth configured)"
   type = object({
     enabled         = bool
-    name            = string
-    vault_server    = string
-    vault_ca_bundle = string
-    pki_path        = string
-    auth = object({
+    name            = optional(string, "vault-issuer")
+    vault_server    = optional(string, "http://vault.vault.svc.cluster.local:8200")
+    vault_ca_bundle = optional(string, "")
+    pki_path        = optional(string, "pki/sign/cert-manager")
+    auth = optional(object({
       role         = string
       mount_path   = string
       sa_name      = string
       sa_namespace = string
       audiences    = list(string)
-    })
-  })
-  default = {
-    enabled         = false
-    name            = "vault-issuer"
-    vault_server    = "http://vault.vault.svc.cluster.local:8200"
-    vault_ca_bundle = ""
-    pki_path        = "pki/sign/cert-manager"
-    auth = {
+    }), {
       role         = "cert-manager"
       mount_path   = "/v1/auth/kubernetes"
       sa_name      = "cert-manager"
       sa_namespace = "cert-manager"
       audiences    = []
-    }
+    })
+  })
+  default = {
+    enabled = false
   }
 }
 
-# Vault Injector TLS Certificate Configuration
+# Vault Injector TLS Certificate Configuration (DEPRECATED - use certificate submodule instead)
 # Configuration for Vault Agent Injector webhook TLS certificate (issued by Vault Issuer)
+# 
+# NOTE: This variable is deprecated. Use the certificate submodule instead:
+#   module "vault_injector_cert" {
+#     source = "./modules/cert-manager/modules/certificate"
+#     ...
+#   }
 variable "vault_injector_tls" {
   description = <<-EOT
-    Vault Agent Injector TLS certificate configuration.
+    DEPRECATED: Use certificate submodule. Vault Agent Injector TLS certificate configuration.
     Certificate is issued by Vault PKI (via the Vault Issuer).
     This follows the HashiCorp vendor documentation pattern.
     See: https://developer.hashicorp.com/vault/tutorials/archive/kubernetes-cert-manager
   EOT
   type = object({
     enabled      = bool
-    namespace    = string
-    service_name = string
-    secret_name  = string
-    issuer_name  = string
-    duration     = string
-    renew_before = string
-    dns_names    = list(string)
+    namespace    = optional(string, "vault")
+    service_name = optional(string, "vault-agent-injector-svc")
+    secret_name  = optional(string, "injector-tls")
+    issuer_name  = optional(string, "vault-issuer")
+    duration     = optional(string, "2160h")
+    renew_before = optional(string, "360h")
+    dns_names    = optional(list(string), [])
   })
   default = {
-    enabled      = false
-    namespace    = "vault"
-    service_name = "vault-agent-injector-svc"
-    secret_name  = "injector-tls"
-    issuer_name  = "vault-issuer"
-    duration     = "2160h" # 90 days (per vault PKI best practices)
-    renew_before = "360h"  # 15 days
-    dns_names    = []
+    enabled = false
   }
 }

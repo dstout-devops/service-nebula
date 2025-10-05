@@ -130,9 +130,6 @@ module "mgmt_cert_manager" {
     feature_gates   = ""
   }
 
-  # Vault Issuer and Injector TLS will be configured after Vault is deployed
-  # This is done in a separate config block below
-
   depends_on = [module.mgmt_cilium]
 }
 
@@ -174,112 +171,126 @@ module "mgmt_vault" {
   depends_on = [module.mgmt_cilium, module.mgmt_cert_manager]
 }
 
-# cert-manager Vault Issuer and Injector Certificate
+# Vault Issuer for cert-manager
 # This configures cert-manager to use Vault's PKI engine for certificate issuance
-# Deployed after Vault is up and PKI is configured
-module "mgmt_cert_manager_vault_issuer" {
-  source = "./modules/cert-manager"
+# Uses the generic issuer submodule with Vault-specific configuration
+module "mgmt_vault_issuer" {
+  source = "./modules/cert-manager/modules/issuer"
+  providers = {
+    kubernetes = kubernetes.mgmt
+    kubectl    = kubectl.mgmt
+  }
+
+  name                      = "vault-issuer"
+  namespace                 = "cert-manager"
+  is_cluster_issuer         = true  # Use ClusterIssuer so it can be referenced from any namespace
+  create_service_account    = false  # Use existing SA from Helm chart
+  service_account_name      = "cert-manager"
+  create_token_request_role = true  # Still need token request RBAC for Vault auth
+
+  issuer_spec = {
+    vault = {
+      server   = module.mgmt_vault.vault_addr
+      path     = module.mgmt_vault.pki_sign_path
+      caBundle = base64encode(module.mgmt_vault.ca_chain_pem)
+      auth = {
+        kubernetes = {
+          role       = module.mgmt_vault.pki_kubernetes_auth_role
+          mountPath  = "/v1/auth/${module.mgmt_vault.pki_kubernetes_auth_path}"
+          serviceAccountRef = {
+            name = "cert-manager"
+          }
+        }
+      }
+    }
+  }
+
+  labels = {
+    "app.kubernetes.io/part-of" = "vault-integration"
+  }
+
+  depends_on = [module.mgmt_vault, module.mgmt_cert_manager]
+}
+
+# Vault Agent Injector TLS Certificate
+# Certificate issued by Vault PKI via the vault-issuer
+# See: https://developer.hashicorp.com/vault/tutorials/archive/kubernetes-cert-manager
+module "mgmt_vault_injector_certificate" {
+  source = "./modules/cert-manager/modules/certificate"
+  providers = {
+    kubectl = kubectl.mgmt
+  }
+
+  name                = "injector-certificate"
+  namespace           = "vault"
+  secret_name         = "injector-tls"
+  common_name         = "vault-agent-injector-svc.vault.svc.cluster.local"  # Must match allowed_domains
+  generate_dns_names  = false  # Manually specify to match Vault PKI role restrictions
+  dns_names = [
+    # Only use full FQDN - short names not allowed by Vault PKI role
+    "vault-agent-injector-svc.vault.svc.cluster.local"
+  ]
+  duration            = "2160h" # 90 days
+  renew_before        = "360h"  # 15 days
+  issuer_name         = module.mgmt_vault_issuer.name
+  issuer_kind         = "ClusterIssuer"  # Must be ClusterIssuer since certificate is in different namespace
+
+  labels = {
+    "app.kubernetes.io/part-of" = "vault-integration"
+  }
+
+  component = "webhook-tls"
+
+  depends_on = [module.mgmt_vault_issuer]
+}
+
+# Traefik Ingress Controller
+# Deploys Traefik as the ingress controller for HTTP/HTTPS routing
+module "mgmt_traefik" {
+  source = "./modules/traefik"
   providers = {
     helm       = helm.mgmt
     kubernetes = kubernetes.mgmt
     kubectl    = kubectl.mgmt
   }
 
-  cluster_name     = module.mgmt_cluster.cluster_name
-  namespace        = "cert-manager"
-  chart_version    = "v1.18.2"
-  install_crds     = false # Already installed
-  create_namespace = false # Already exists
+  # Basic configuration
+  namespace        = local.mgmt_cluster.traefik.namespace
+  create_namespace = local.mgmt_cluster.traefik.create_namespace
+  release_name     = local.mgmt_cluster.traefik.release_name
+  chart_version    = local.mgmt_cluster.traefik.chart_version
 
-  # Controller configuration - use same as initial deployment
-  controller = {
-    replicas = 1
-    resources = {
-      requests = {
-        memory = "32Mi"
-        cpu    = "10m"
-      }
-      limits = {
-        memory = "256Mi"
-        cpu    = "500m"
-      }
-    }
-  }
+  # Deployment configuration
+  deployment = local.mgmt_cluster.traefik.deployment
 
-  # Webhook configuration
-  webhook = {
-    replicas        = 1
-    timeout_seconds = 10
-    resources = {
-      requests = {
-        memory = "32Mi"
-        cpu    = "10m"
-      }
-      limits = {
-        memory = "64Mi"
-        cpu    = "100m"
-      }
-    }
-  }
+  # Service configuration
+  service = local.mgmt_cluster.traefik.service
 
-  # CA Injector configuration
-  cainjector = {
-    replicas = 1
-    resources = {
-      requests = {
-        memory = "32Mi"
-        cpu    = "10m"
-      }
-      limits = {
-        memory = "128Mi"
-        cpu    = "100m"
-      }
-    }
-  }
+  # Ports configuration
+  ports = local.mgmt_cluster.traefik.ports
 
-  # Global configuration
-  global = {
-    log_level = 2
-  }
+  # Traefik providers configuration (kubernetesCRD, kubernetesIngress)
+  traefik_providers = local.mgmt_cluster.traefik.providers
 
-  # Feature flags
-  features = {
-    prometheus      = true
-    startupapicheck = false # Skip startup check on second apply
-    feature_gates   = ""
-  }
+  # Observability
+  logs      = local.mgmt_cluster.traefik.logs
+  metrics   = local.mgmt_cluster.traefik.metrics
+  dashboard = local.mgmt_cluster.traefik.dashboard
 
-  # Vault Issuer Configuration
-  # Uses Vault's PKI secrets engine to issue certificates
-  vault_issuer = {
-    enabled         = true
-    name            = "vault-issuer"
-    vault_server    = module.mgmt_vault.vault_addr
-    vault_ca_bundle = base64encode(module.mgmt_vault.ca_chain_pem) # Full chain for TLS verification
-    pki_path        = module.mgmt_vault.pki_sign_path
-    auth = {
-      role         = module.mgmt_vault.pki_kubernetes_auth_role
-      mount_path   = "/v1/auth/${module.mgmt_vault.pki_kubernetes_auth_path}"
-      sa_name      = "cert-manager" # Use cert-manager SA (matches PKI auth role)
-      sa_namespace = "cert-manager" # In cert-manager namespace
-      audiences    = []
-    }
-  }
+  # Security contexts
+  security_context     = local.mgmt_cluster.traefik.security_context
+  pod_security_context = local.mgmt_cluster.traefik.pod_security_context
 
-  # Vault Injector TLS Certificate
-  # Certificate issued by Vault PKI via the vault-issuer
-  # See: https://developer.hashicorp.com/vault/tutorials/archive/kubernetes-cert-manager
-  vault_injector_tls = {
-    enabled      = true
-    namespace    = "vault"
-    service_name = "vault-agent-injector-svc"
-    secret_name  = "injector-tls"
-    issuer_name  = "vault-issuer" # References the Vault Issuer
-    duration     = "2160h"        # 90 days
-    renew_before = "360h"         # 15 days
-    dns_names    = []             # Uses defaults from module
-  }
+  # Resources
+  resources = local.mgmt_cluster.traefik.resources
 
-  depends_on = [module.mgmt_vault]
+  # Module configurations (disabled for initial test)
+  tls_config                = local.mgmt_cluster.traefik.tls_config
+  create_default_middleware = local.mgmt_cluster.traefik.create_default_middleware
+  default_middlewares       = local.mgmt_cluster.traefik.default_middlewares
+  create_ingress_routes     = local.mgmt_cluster.traefik.create_ingress_routes
+  ingress_routes            = local.mgmt_cluster.traefik.ingress_routes
+
+  depends_on = [module.mgmt_cilium, module.mgmt_cert_manager, module.mgmt_vault]
 }
 

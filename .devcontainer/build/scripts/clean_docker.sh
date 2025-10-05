@@ -10,6 +10,11 @@ source "$(dirname "$0")/common.sh"
 source "$(dirname "$0")/../env.sh"
 
 if command -v docker &> /dev/null; then
+    # First, specifically clean registry proxy containers (common leftover)
+    echo "  Cleaning registry proxy containers..."
+    docker ps -aq --filter "name=registry-proxy" | xargs -r docker rm -f 2>/dev/null || true
+    print_status "Registry proxy containers cleaned"
+    
     # Stop and remove all remaining containers (Kind/Terraform should have handled their own)
     if [ "$(docker ps -aq)" ]; then
         echo "  Stopping and removing remaining Docker containers..."
@@ -32,10 +37,16 @@ if command -v docker &> /dev/null; then
         print_status "No Docker images to clean"
     fi
     
-    # Clean volumes, networks, and system resources
-    echo "  Cleaning Docker volumes, networks, and system resources..."
-    docker volume prune --force 2>/dev/null || true
+    # Clean specific networks that might cause conflicts
+    echo "  Cleaning Docker networks..."
+    docker network rm registry-proxies 2>/dev/null && echo "    ✅ Removed registry-proxies network" || true
+    docker network rm kind 2>/dev/null && echo "    ✅ Removed kind network" || true
     docker network prune --force 2>/dev/null || true
+    print_status "Docker networks cleaned"
+    
+    # Clean volumes and system resources
+    echo "  Cleaning Docker volumes and system resources..."
+    docker volume prune --force 2>/dev/null || true
     docker system prune --force 2>/dev/null || true
     print_status "Docker system resources cleaned"
 else
