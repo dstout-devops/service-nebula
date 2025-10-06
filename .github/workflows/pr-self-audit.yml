@@ -1,0 +1,143 @@
+name: PR Self-Audit
+
+on:
+  pull_request:
+    paths:
+      - '**/*.tf'
+      - '.github/**'
+      - 'charts/**'
+      - '**/Chart.yaml'
+      - '**/values*.yaml'
+
+jobs:
+  terraform-and-helm-audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.6.0'
+
+      - name: Terraform fmt (check)
+        run: |
+          set -euo pipefail
+          files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.sha }} | grep '\.tf$' || true)
+          if [ -z "$files" ]; then
+            echo "No .tf changes detected"
+            exit 0
+          fi
+          # Run fmt on changed directories
+          dirs=$(echo "$files" | xargs -n1 dirname | sort -u)
+          for d in $dirs; do
+            (cd "$d" && terraform fmt -diff -check -no-color)
+          done
+
+      - name: Terraform validate
+        run: |
+          set -euo pipefail
+          files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.sha }} | grep '\.tf$' || true)
+          if [ -z "$files" ]; then
+            echo "No .tf changes detected"
+            exit 0
+          fi
+          dirs=$(echo "$files" | xargs -n1 dirname | sort -u)
+          for d in $dirs; do
+            echo "==> validating $d"
+            (cd "$d" && terraform init -input=false -backend=false)
+            (cd "$d" && terraform validate -no-color)
+          done
+
+      - name: Detect null_resource and local-exec usage
+        id: detect_null
+        run: |
+          set -euo pipefail
+          files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.sha }} | grep '\.tf$' || true)
+          if [ -z "$files" ]; then
+            echo "no_tf_changes=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          found=false
+          for f in $files; do
+            if grep -nE "resource\s+\"null_resource\"|local-exec" "$f" >/dev/null 2>&1; then
+              echo "Found null_resource or local-exec in $f"
+              found=true
+            fi
+          done
+          echo "found_null_resource=$found" >> $GITHUB_OUTPUT
+
+      - name: Check provider pins (warn if pinned to old versions)
+        run: |
+          set -euo pipefail
+          files=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.sha }} | grep '\.tf$' || true)
+          if [ -z "$files" ]; then
+            echo "No .tf changes detected"
+            exit 0
+          fi
+          pinned=false
+          for f in $files; do
+            if grep -nE "required_providers|version\s*=\s*\"[0-9]+\.[0-9]+\.[0-9]+\"" "$f" >/dev/null 2>&1; then
+              echo "Provider version pin detected in $f"
+              pinned=true
+            fi
+          done
+          if [ "$pinned" = true ]; then
+            echo "::warning file=.,line=1::Provider version pins detected in PR. Prefer using latest stable providers unless pinning is required and documented." 
+          fi
+
+      - name: Helm lint
+        run: |
+          set -euo pipefail
+          if ! command -v helm >/dev/null 2>&1; then
+            curl -fsSL https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz -o /tmp/helm.tar.gz
+            tar -xzf /tmp/helm.tar.gz -C /tmp
+            sudo mv /tmp/linux-amd64/helm /usr/local/bin/helm
+          fi
+          # Find chart directories changed
+          charts=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.sha }} | grep -E '/Chart.yaml$|/values.*\.yaml$|/values.*\.yml$' || true)
+          if [ -z "$charts" ]; then
+            echo "No chart changes detected"
+            exit 0
+          fi
+          dirs=$(echo "$charts" | xargs -n1 dirname | sort -u)
+          for d in $dirs; do
+            if [ -f "$d/Chart.yaml" ]; then
+              echo "Linting chart $d"
+              helm lint "$d"
+            fi
+          done
+
+      - name: Helm template + kubeval
+        run: |
+          set -euo pipefail
+          if ! command -v kubeval >/dev/null 2>&1; then
+            KUBEVAL_VERSION=v0.16.1
+            curl -fsSL "https://github.com/instrumenta/kubeval/releases/download/${KUBEVAL_VERSION}/kubeval-${KUBEVAL_VERSION}-linux-amd64.tar.gz" -o /tmp/kubeval.tar.gz
+            tar -xzf /tmp/kubeval.tar.gz -C /tmp
+            sudo mv /tmp/kubeval /usr/local/bin/kubeval
+          fi
+          charts=$(git diff --name-only ${{ github.event.pull_request.base.sha }}...${{ github.sha }} | grep -E '/Chart.yaml$|/values.*\.yaml$|/values.*\.yml$' || true)
+          if [ -z "$charts" ]; then
+            echo "No chart changes detected"
+            exit 0
+          fi
+          dirs=$(echo "$charts" | xargs -n1 dirname | sort -u)
+          for d in $dirs; do
+            if [ -f "$d/Chart.yaml" ]; then
+              echo "Rendering chart $d"
+              helm template "$d" | kubeval --strict
+            fi
+          done
+
+      - name: Upload findings
+        if: always()
+        run: |
+          set -euo pipefail
+          echo "null_resource_found=${{ steps.detect_null.outputs.found_null_resource:-false }}"
+          if [ "${{ steps.detect_null.outputs.found_null_resource }}" = "true" ]; then
+            echo "::error ::Found Terraform null_resource or local-exec usage in this PR. Please provide justification or migrate to native resources/in-cluster Jobs." 
+          fi
