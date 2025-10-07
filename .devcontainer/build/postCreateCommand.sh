@@ -9,26 +9,38 @@ set -e
 SCRIPT_DIR="$(dirname "$0")"
 
 # Source centralized environment configuration
-source "$SCRIPT_DIR/env.sh"
+source "$(dirname "$0")/env.sh"
 
 echo "🚀 Starting DevContainer setup process..."
 echo ""
 
-# Step 1: Essential Cleanup (Docker + KIND)
-echo "🧹 Step 1: Essential Cleanup"
-echo "============================"
-echo "Cleaning Docker and KIND resources..."
+# Step 0: Fix Script Permissions
+echo "🔧 Step 0: Fixing Script Permissions"
+echo "====================================="
+# Ensure all shell scripts in the devcontainer are executable
+find "$DEVCONTAINER_ROOT" -type f -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+# Also fix Terraform module scripts
+find "$TERRAFORM_ROOT/modules" -type f -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+echo "✅ Script permissions fixed"
+echo ""
 
-# Ensure scripts are executable
-chmod +x "$SCRIPT_DIR/scripts"/*.sh
+# Step 1: Complete Environment Cleanup
+echo "🧹 Step 1: Complete Environment Cleanup"
+echo "========================================"
+echo "Wiping all existing configurations..."
 
-# Source common functions
+# Source common functions (scripts are now executable)
 source "$SCRIPT_DIR/scripts/common.sh"
 
-# Only run essential cleanup
-"$SCRIPT_DIR/scripts/clean_docker.sh"
+# Run cleanup in optimal order: Terraform -> Kind -> Docker -> Kube -> Temp
+"$SCRIPT_DIR/scripts/setup_env.sh"
+"$SCRIPT_DIR/scripts/clean_terraform.sh"
 "$SCRIPT_DIR/scripts/clean_kind.sh"
+"$SCRIPT_DIR/scripts/clean_docker.sh"
+"$SCRIPT_DIR/scripts/clean_kube.sh"
+"$SCRIPT_DIR/scripts/clean_temp.sh"
 "$SCRIPT_DIR/scripts/clean_conflicts.sh"
+print_status "Complete environment cleanup finished"
 echo ""
 
 # Step 2: Shell Environment Setup

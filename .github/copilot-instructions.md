@@ -22,6 +22,9 @@ rules:
 
 	- id: minimal_scope
 		description: "Prefer the smallest, non-breaking change that satisfies the request. When applicable present both a minimal and a robust option."
+
+	- id: no_documentation_files
+		description: "Never create .md documentation files unless explicitly requested by the user. Focus only on code, configuration, and script changes."
 # Repository AI instructions — service-nebula
 
 Short overview (human-friendly)

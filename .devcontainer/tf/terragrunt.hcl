@@ -106,7 +106,22 @@ generate "provider" {
     provider "vault" {
       address = "https://localhost:8200"
       skip_tls_verify = true
-      # Token comes from VAULT_TOKEN environment variable
+      
+      # Use Kubernetes auth if token file exists, otherwise use token file
+      dynamic "auth_login" {
+        for_each = fileexists("$${path.module}/.vault-k8s-token") ? [1] : []
+        content {
+          path = "auth/kubernetes/login"
+          
+          parameters = {
+            role = "terraform"
+            jwt  = trimspace(file("$${path.module}/.vault-k8s-token"))
+          }
+        }
+      }
+      
+      # Fallback to token file for Stage 2b (bootstrap)
+      token = fileexists("$${path.module}/.vault-k8s-token") ? null : try(file("$${path.module}/.vault-token"), null)
     }
   EOF
 }

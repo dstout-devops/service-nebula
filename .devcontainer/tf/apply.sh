@@ -95,12 +95,12 @@ echo "✅ Stage 1 complete - Kubernetes context available"
 echo ""
 
 # =============================================================================
-# Stage 2: Core Kubernetes Resources (CNI, Apps, Vault Deployment)
+# Stage 2a: Core Kubernetes Resources (CNI, Apps, Vault Deployment)
 # Kubernetes provider is now available (cluster exists)
-# Deploys Vault but doesn't configure PKI yet (no VAULT_TOKEN)
+# Deploy Vault and wait for initialization (no Vault provider needed yet)
 # =============================================================================
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔧 Stage 2: Core Kubernetes Resources + Vault"
+echo "🔧 Stage 2a: Core Kubernetes Resources + Vault Deployment"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Providers: Docker, Kubernetes, Helm, Kubectl"
 echo ""
@@ -111,8 +111,16 @@ terragrunt apply \
     -target=module.mgmt_cert_manager \
     -target=module.mgmt_vault.kubernetes_namespace.vault \
     -target=module.mgmt_vault.module.tls \
+    -target=module.mgmt_vault_injector_selfsigned_issuer \
+    -target=module.mgmt_vault_injector_ca_certificate \
+    -target=module.mgmt_vault_injector_ca_issuer \
+    -target=module.mgmt_vault_injector_certificate \
     -target=module.mgmt_vault.helm_release.vault \
-    -target=module.mgmt_vault.module.init \
+    -target=module.mgmt_vault.module.init.kubernetes_service_account.vault_init \
+    -target=module.mgmt_vault.module.init.kubernetes_role.vault_init \
+    -target=module.mgmt_vault.module.init.kubernetes_role_binding.vault_init \
+    -target=module.mgmt_vault.module.init.kubernetes_config_map.vault_init_script \
+    -target=module.mgmt_vault.module.init.kubernetes_job.vault_init_job \
     "$@"
 
 # Wait for Vault
@@ -127,16 +135,36 @@ for i in {1..30}; do
     sleep 5
 done
 
-# Setup Vault connection
+# Setup Vault connection and write root token
 echo ""
 echo "🔌 Setting up Vault connection..."
 kubectl port-forward -n vault svc/vault 8200:8200 >/dev/null 2>&1 &
 PORT_FORWARD_PID=$!
 sleep 2
-export VAULT_TOKEN=$(kubectl get secret vault-unseal-keys -n vault -o jsonpath='{.data.root-token}' | base64 -d)
-echo "✅ Vault token: ${VAULT_TOKEN:0:10}..."
+
+echo "📝 Writing root token for Vault provider..."
+VAULT_TOKEN=$(kubectl get secret vault-unseal-keys -n vault -o jsonpath='{.data.root-token}' | base64 -d)
+echo "$VAULT_TOKEN" > .vault-token
+chmod 600 .vault-token
+echo "✅ Root token written to .vault-token file: ${VAULT_TOKEN:0:10}..."
+
+# =============================================================================
+# Stage 2b: Terraform Authentication Setup
+# Vault provider now has root token and can create auth backend
+# =============================================================================
 echo ""
-echo "✅ Stage 2 complete - Vault provider available"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔧 Stage 2b: Terraform Authentication Setup"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "Providers: Docker, Kubernetes, Helm, Kubectl, Vault (root token)"
+echo ""
+
+terragrunt apply \
+    -target=module.mgmt_vault_terraform_auth \
+    "$@"
+
+echo ""
+echo "✅ Stage 2 complete - Terraform auth configured"
 echo ""
 
 # =============================================================================
@@ -148,6 +176,12 @@ echo "🔐 Stage 3: Vault PKI + Applications"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Providers: Docker, Kubernetes, Helm, Kubectl, Vault"
 echo ""
+
+# Get Kubernetes service account token for Vault authentication
+echo "Getting Kubernetes service account token for Vault authentication..."
+kubectl create token terraform -n default --duration=3600s > .vault-k8s-token
+chmod 600 .vault-k8s-token
+echo "✅ Using Kubernetes auth (1-hour token)"
 
 terragrunt apply "$@"
 

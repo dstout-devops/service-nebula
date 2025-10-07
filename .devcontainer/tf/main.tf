@@ -212,9 +212,108 @@ module "mgmt_vault_issuer" {
   depends_on = [module.mgmt_vault, module.mgmt_cert_manager]
 }
 
+# ============================================================================
+# Terraform Authentication for Vault Provider
+# Creates a Kubernetes ServiceAccount and Vault role for Terraform to use
+# short-lived tokens instead of the root token
+# ============================================================================
+
+module "mgmt_vault_terraform_auth" {
+  source = "./modules/vault/modules/terraform-auth"
+  providers = {
+    kubernetes = kubernetes.mgmt
+  }
+
+  enabled               = true
+  create_auth_backend   = true  # Create the Kubernetes auth backend in Stage 2
+  namespace             = "default"
+  service_account_name  = "terraform"
+  role_name             = "terraform"
+  policy_name           = "terraform"
+  kubernetes_auth_path  = "kubernetes"
+  kubernetes_host       = "https://kubernetes.default.svc"
+  kubernetes_ca_cert    = try(file("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"), "")
+  token_ttl             = 3600 # 1 hour
+  pki_mount_path        = "pki"
+
+  # Ensure Vault is deployed before creating auth backend
+  depends_on = [module.mgmt_vault]
+}
+
+# ============================================================================
+# Agent Injector Self-Signed CA Infrastructure
+# Per HashiCorp docs: Use separate self-signed CA for injector, not Vault PKI
+# This breaks the circular dependency (injector needs to start before Vault)
+# See: https://developer.hashicorp.com/vault/docs/deploy/kubernetes/helm/examples/injector-tls-cert-manager
+# ============================================================================
+
+# Self-signed issuer (bootstrap)
+module "mgmt_vault_injector_selfsigned_issuer" {
+  source = "./modules/cert-manager/modules/issuer"
+  providers = {
+    kubernetes = kubernetes.mgmt
+    kubectl    = kubectl.mgmt
+  }
+
+  name              = "injector-selfsigned"
+  namespace         = "vault"
+  is_cluster_issuer = false
+  create_service_account = false
+  create_token_request_role = false
+
+  issuer_spec = {
+    selfSigned = {}
+  }
+
+  depends_on = [module.mgmt_cert_manager, module.mgmt_vault.kubernetes_namespace]
+}
+
+# Self-signed CA certificate (the CA itself)
+module "mgmt_vault_injector_ca_certificate" {
+  source = "./modules/cert-manager/modules/certificate"
+  providers = {
+    kubectl = kubectl.mgmt
+  }
+
+  name               = "injector-selfsigned-ca"
+  namespace          = "vault"
+  secret_name        = "injector-ca-secret"
+  common_name        = "Agent Inject CA"
+  is_ca              = true
+  duration           = "87660h"  # 10 years
+  generate_dns_names = false
+  dns_names          = []
+  issuer_name        = module.mgmt_vault_injector_selfsigned_issuer.name
+  issuer_kind        = "Issuer"
+
+  depends_on = [module.mgmt_vault_injector_selfsigned_issuer]
+}
+
+# CA issuer (issues certs from the CA above)
+module "mgmt_vault_injector_ca_issuer" {
+  source = "./modules/cert-manager/modules/issuer"
+  providers = {
+    kubernetes = kubernetes.mgmt
+    kubectl    = kubectl.mgmt
+  }
+
+  name              = "injector-ca-issuer"
+  namespace         = "vault"
+  is_cluster_issuer = false
+  create_service_account = false
+  create_token_request_role = false
+
+  issuer_spec = {
+    ca = {
+      secretName = "injector-ca-secret"
+    }
+  }
+
+  depends_on = [module.mgmt_vault_injector_ca_certificate]
+}
+
 # Vault Agent Injector TLS Certificate
-# Certificate issued by Vault PKI via the vault-issuer
-# See: https://developer.hashicorp.com/vault/tutorials/archive/kubernetes-cert-manager
+# Issued by the self-signed CA above (NOT Vault PKI)
 module "mgmt_vault_injector_certificate" {
   source = "./modules/cert-manager/modules/certificate"
   providers = {
@@ -224,15 +323,16 @@ module "mgmt_vault_injector_certificate" {
   name                = "injector-certificate"
   namespace           = "vault"
   secret_name         = "injector-tls"
-  common_name         = "vault-agent-injector-svc.vault.svc.cluster.local"  # Must match allowed_domains
-  generate_dns_names  = false  # Manually specify to match Vault PKI role restrictions
+  common_name         = "Agent Inject Cert"
+  generate_dns_names  = false
   dns_names = [
-    # Only use full FQDN - short names not allowed by Vault PKI role
-    "vault-agent-injector-svc.vault.svc.cluster.local"
+    "vault-agent-injector-svc",
+    "vault-agent-injector-svc.vault",
+    "vault-agent-injector-svc.vault.svc"
   ]
-  duration            = "2160h" # 90 days
-  renew_before        = "360h"  # 15 days
-  issuer_name         = module.mgmt_vault_issuer.name
+  duration            = "24h"
+  renew_before        = "144m"  # ~10% of 24h
+  issuer_name         = module.mgmt_vault_injector_ca_issuer.name
   issuer_kind         = "ClusterIssuer"  # Must be ClusterIssuer since certificate is in different namespace
 
   labels = {

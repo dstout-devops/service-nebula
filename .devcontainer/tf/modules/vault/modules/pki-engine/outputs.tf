@@ -57,8 +57,8 @@ output "issue_path" {
 # ============================================================================
 
 output "kubernetes_auth_path" {
-  description = "Path of the Kubernetes auth backend"
-  value       = var.enabled && var.kubernetes_auth.enabled ? vault_auth_backend.kubernetes[0].path : null
+  description = "Path of the Kubernetes auth backend (configured by terraform-auth module)"
+  value       = var.enabled && var.kubernetes_auth.enabled ? var.kubernetes_auth.path : null
 }
 
 output "kubernetes_auth_role_name" {

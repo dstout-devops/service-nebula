@@ -3,8 +3,5 @@ terraform {
     docker = {
       source = "kreuzwerker/docker"
     }
-    null = {
-      source = "hashicorp/null"
-    }
   }
 }

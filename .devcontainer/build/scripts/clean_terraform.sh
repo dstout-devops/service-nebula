@@ -42,6 +42,13 @@ if [ -f "terraform.tfstate" ] || [ -d ".terraform" ] || [ -d "$TF_DATA_DIR" ] ||
         safe_terragrunt destroy -auto-approve 2>/dev/null || true
     fi
     
+    # Clean up any remaining PVCs (especially Vault data PVCs)
+    if command -v kubectl &> /dev/null; then
+        echo "  Cleaning up PersistentVolumeClaims..."
+        kubectl delete pvc -n vault --all 2>/dev/null && echo "    ✅ Vault PVCs deleted" || true
+        kubectl delete pvc --all --all-namespaces 2>/dev/null || true
+    fi
+    
     print_status "Terragrunt/Terraform destroy completed (or skipped if no state)"
 fi
 

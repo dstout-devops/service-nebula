@@ -95,9 +95,9 @@ resource "helm_release" "traefik" {
       }
 
       # Service Account
+      # Note: Chart auto-creates service account if name is empty
       serviceAccount = {
-        create = true
-        name   = var.service_account.name
+        name = var.service_account.name != "" ? var.service_account.name : null
       }
 
       # Resources

@@ -43,7 +43,7 @@ resource "kind_cluster" "this" {
         dynamic "extra_mounts" {
           for_each = var.registry_mirrors
           content {
-            host_path      = "/tmp/kind-registry-${var.cluster_name}/${extra_mounts.key}"
+            host_path      = "/tmp/registry-cache/config/${extra_mounts.key}"
             container_path = "/etc/containerd/certs.d/${extra_mounts.key}"
             read_only      = true
           }
@@ -93,7 +93,7 @@ resource "kind_cluster" "this" {
         dynamic "extra_mounts" {
           for_each = var.registry_mirrors
           content {
-            host_path      = "/tmp/kind-registry-${var.cluster_name}/${extra_mounts.key}"
+            host_path      = "/tmp/registry-cache/config/${extra_mounts.key}"
             container_path = "/etc/containerd/certs.d/${extra_mounts.key}"
             read_only      = true
           }

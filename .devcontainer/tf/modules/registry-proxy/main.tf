@@ -14,6 +14,7 @@ resource "docker_network" "registry_network" {
 }
 
 # Registry proxy containers
+# Note: Cache directories are pre-created by setup_env.sh with correct permissions
 resource "docker_container" "registry_proxy" {
   for_each = var.registries
 
@@ -25,6 +26,9 @@ resource "docker_container" "registry_proxy" {
   # Wait for container to be healthy before considering it created
   wait         = true
   wait_timeout = 60
+
+  # Run as vscode user (UID 1000) to match devcontainer permissions
+  user = "1000:1000"
 
   networks_advanced {
     name = docker_network.registry_network.name
@@ -44,7 +48,7 @@ resource "docker_container" "registry_proxy" {
   ]
 
   volumes {
-    host_path      = "/var/lib/registry-cache/${replace(each.key, ".", "-")}"
+    host_path      = "/tmp/registry-cache/${replace(each.key, ".", "-")}"
     container_path = "/var/lib/registry"
   }
 

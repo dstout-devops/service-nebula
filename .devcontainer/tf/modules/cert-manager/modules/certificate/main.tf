@@ -18,7 +18,7 @@ resource "kubectl_manifest" "certificate" {
       )
       annotations = var.annotations
     }
-    spec = {
+    spec = merge({
       secretName  = var.secret_name
       duration    = var.duration
       renewBefore = var.renew_before
@@ -61,6 +61,6 @@ resource "kubectl_manifest" "certificate" {
 
       # URI SANs (if any)
       uris = var.uris
-    }
+    }, var.is_ca ? { isCA = true } : {})
   })
 }

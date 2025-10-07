@@ -10,10 +10,11 @@ source "$(dirname "$0")/common.sh"
 source "$(dirname "$0")/../env.sh"
 
 if command -v docker &> /dev/null; then
-    # First, specifically clean registry proxy containers (common leftover)
-    echo "  Cleaning registry proxy containers..."
-    docker ps -aq --filter "name=registry-proxy" | xargs -r docker rm -f 2>/dev/null || true
-    print_status "Registry proxy containers cleaned"
+    # First, specifically clean all registry-related containers (common leftover)
+    echo "  Cleaning registry containers..."
+    docker ps -aq --filter "name=registry" | xargs -r docker rm -f 2>/dev/null || true
+    docker ps -aq --filter "name=kind-registry" | xargs -r docker rm -f 2>/dev/null || true
+    print_status "Registry containers cleaned"
     
     # Stop and remove all remaining containers (Kind/Terraform should have handled their own)
     if [ "$(docker ps -aq)" ]; then
@@ -44,11 +45,19 @@ if command -v docker &> /dev/null; then
     docker network prune --force 2>/dev/null || true
     print_status "Docker networks cleaned"
     
-    # Clean volumes and system resources
-    echo "  Cleaning Docker volumes and system resources..."
-    docker volume prune --force 2>/dev/null || true
+    # Clean volumes (EXCLUDING the persistent registry cache)
+    echo "  Cleaning Docker volumes (preserving registry cache)..."
+    
+    # Remove individual volumes that are NOT the registry cache
+    # Note: service-nebula-registry-cache must be preserved across rebuilds
+    docker volume ls -q | grep -v "service-nebula-registry-cache" | xargs -r docker volume rm 2>/dev/null || true
+    
+    print_info "Preserved: service-nebula-registry-cache volume (contains cached images)"
+    
+    # System prune WITHOUT --volumes flag to preserve our registry cache
+    echo "  Cleaning Docker system resources (preserving volumes)..."
     docker system prune --force 2>/dev/null || true
-    print_status "Docker system resources cleaned"
+    print_status "Docker system resources cleaned (registry cache preserved)"
 else
     print_warning "Docker not available"
 fi

@@ -10,7 +10,10 @@ set -euo pipefail
 SCRIPT_DIR="$(dirname "$0")"
 source "$SCRIPT_DIR/common.sh"
 
-# Install Cilium CLI using official method (webinstall.dev fallback)
+# Source centralized environment configuration
+source "$(dirname "$0")/../env.sh"
+
+# Install Cilium CLI
 install_cilium_cli() {
   print_status "Installing Cilium CLI..."
   
@@ -20,27 +23,6 @@ install_cilium_cli() {
     print_status "Cilium CLI already installed (version: $installed_version)"
     return 0
   fi
-  
-  # Try webinstall.dev first
-  print_status "Attempting installation via webinstall.dev..."
-  if curl -fsSL https://webi.ms/cilium | bash; then
-    # Source the updated PATH
-    if [[ -f "$HOME/.config/envman/PATH.env" ]]; then
-      # shellcheck disable=SC1091
-      source "$HOME/.config/envman/PATH.env"
-    fi
-    export PATH="$HOME/.local/bin:$PATH"
-    
-    if command -v cilium &>/dev/null; then
-      local new_version
-      new_version=$(cilium version --client 2>/dev/null | grep 'cilium-cli:' | awk '{print $2}' || echo "installed")
-      print_success "Cilium CLI installed via webinstall.dev (version: $new_version)"
-      return 0
-    fi
-  fi
-  
-  # Fallback to official installation method
-  print_status "Webinstall.dev failed, using official installation method..."
   
   local cilium_version
   cilium_version=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
@@ -78,7 +60,7 @@ install_cilium_cli() {
   fi
 }
 
-# Install Hubble CLI using traditional method (since webinstall.dev doesn't have it)
+# Install Hubble CLI
 install_hubble_cli() {
   print_status "Installing Hubble CLI..."
   

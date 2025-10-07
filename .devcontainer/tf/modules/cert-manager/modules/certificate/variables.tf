@@ -140,3 +140,9 @@ variable "annotations" {
   type        = map(string)
   default     = {}
 }
+
+variable "is_ca" {
+  description = "Whether this certificate is a CA certificate (sets isCA in spec)"
+  type        = bool
+  default     = false
+}

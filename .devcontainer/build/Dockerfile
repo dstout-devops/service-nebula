@@ -57,6 +57,7 @@ RUN apt-get update \
     && rm -Rf /usr/share/doc && rm -Rf /usr/share/man
 
 COPY --from=hashicorp/vault:latest /bin/vault /bin/
+COPY --from=hashicorp/vault-k8s:latest /bin/vault-k8s /bin/
 COPY --from=ghcr.io/opentofu/opentofu:minimal /usr/local/bin/tofu /usr/local/bin/
 COPY --from=docker.io/alpine/terragrunt:latest /usr/local/bin/terragrunt /usr/local/bin/
 

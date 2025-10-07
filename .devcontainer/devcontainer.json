@@ -17,6 +17,14 @@
 			"dockerDefaultAddressPool": "base=10.0.0.0/16,size=24"
 		}
 	},
+
+	"mounts": [
+		{
+			"source": "service-nebula-registry-cache",
+			"target": "/tmp/registry-cache",
+			"type": "volume"
+		}
+	],
 	"containerEnv": {
 		"NODE_EXTRA_CA_CERTS": "/etc/ssl/certs/ca-certificates.crt"
 	},
@@ -24,11 +32,11 @@
 	"portsAttributes": {
 		"8080": {
 			"label": "Traefik HTTP",
-			"onAutoForward": "notify"
+			"onAutoForward": "silent"
 		},
 		"8443": {
 			"label": "Traefik HTTPS",
-			"onAutoForward": "notify"
+			"onAutoForward": "silent"
 		}
 	},
 	"postStartCommand": "chmod +x .devcontainer/build/*.sh && .devcontainer/build/postCreateCommand.sh",

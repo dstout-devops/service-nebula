@@ -46,3 +46,7 @@ terraform.rc
 **/certs/*.key
 **/certs/*.crt
 *.tar.gz
+
+# Vault authentication files (contain sensitive tokens)
+.vault-token
+.vault-k8s-token
